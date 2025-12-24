@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+    Base application theme for the app.
+    This theme is applied to the application's window before Jetpack Compose takes over.
+    It's referenced in AndroidManifest.xml.
+    -->
+    <style name="Theme.Material3.DayNight.NoActionBar" parent="Theme.Material3.Dark.NoActionBar">
+        <!--
+        You can customize properties for the pre-Compose window here if needed.
+        For example, setting the status bar color.
+        However, our AINOCTheme in Compose already handles this.
+        -->
+        <!-- <item name="android:statusBarColor">@color/background_dark</item> -->
+    </style>
+</resources>
