@@ -8,8 +8,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,6 +34,8 @@ import com.example.ainoc.ui.navigation.Screen
 import com.example.ainoc.ui.screens.alerts.AlertDetailsScreen
 import com.example.ainoc.ui.screens.alerts.AlertsListScreen
 import com.example.ainoc.ui.screens.dashboard.DashboardScreen
+import com.example.ainoc.ui.screens.explorer.DeviceDetailsScreen
+import com.example.ainoc.ui.screens.explorer.ExplorerScreen
 import com.example.ainoc.ui.theme.*
 import com.example.ainoc.util.NoRippleInteractionSource
 import kotlinx.coroutines.launch
@@ -207,47 +207,33 @@ private fun DrawerContent(navController: NavController, onCloseDrawer: () -> Uni
         )
     }
 }
-
 @Composable
 private fun MainContentNavHost(navController: NavHostController) {
-    // This is the standard, modern NavHost. All compiler errors are resolved.
     NavHost(navController, startDestination = Screen.Dashboard.route) {
         val fadeSpec = tween<Float>(300)
         val slideSpec = tween<IntOffset>(350)
 
-        composable(
-            route = Screen.Dashboard.route,
-            enterTransition = { fadeIn(fadeSpec) },
-            exitTransition = { fadeOut(fadeSpec) }
-        ) { DashboardScreen() }
-
-        composable(
-            route = Screen.Alerts.route,
-            enterTransition = { fadeIn(fadeSpec) },
-            exitTransition = { fadeOut(fadeSpec) }
-        ) { AlertsListScreen(navController) }
-
-        composable(
-            route = Screen.Explorer.route,
-            enterTransition = { fadeIn(fadeSpec) },
-            exitTransition = { fadeOut(fadeSpec) }
-        ) { GenericScreen("Explorer") }
-
-        composable(
-            route = Screen.Settings.route,
-            enterTransition = { fadeIn(fadeSpec) },
-            exitTransition = { fadeOut(fadeSpec) }
-        ) { GenericScreen("Settings") }
+        composable(Screen.Dashboard.route) { DashboardScreen() }
+        composable(Screen.Alerts.route) { AlertsListScreen(navController) }
+        composable(Screen.Explorer.route) { ExplorerScreen(navController) } // Add ExplorerScreen
+        composable(Screen.Settings.route) { GenericScreen("Settings") }
 
         composable(
             route = Screen.AlertDetails.route,
-            enterTransition = { slideInHorizontally(slideSpec) { it } },
-            exitTransition = { slideOutHorizontally(slideSpec) { -it } },
-            popEnterTransition = { slideInHorizontally(slideSpec) { -it } },
-            popExitTransition = { slideOutHorizontally(slideSpec) { it } }
+            // ... transitions
         ) { backStackEntry ->
             val alertId = backStackEntry.arguments?.getString("alertId") ?: "N/A"
             AlertDetailsScreen(alertId, navController)
+        }
+
+        // New route for Device Details
+        composable(
+            route = "device_details/{deviceId}",
+            enterTransition = { slideInHorizontally(slideSpec) { it } },
+            exitTransition = { slideOutHorizontally(slideSpec) { -it } }
+        ) { backStackEntry ->
+            val deviceId = backStackEntry.arguments?.getString("deviceId") ?: "N/A"
+            DeviceDetailsScreen(deviceId, navController)
         }
     }
 }

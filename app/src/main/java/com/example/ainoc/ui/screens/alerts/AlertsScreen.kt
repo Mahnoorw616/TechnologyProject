@@ -155,7 +155,7 @@ private fun SearchAppBar(query: String, onQueryChange: (String) -> Unit, onClose
 }
 
 @Composable
-private fun AlertCard(alert: Alert, onClick: () -> Unit) {
+fun AlertCard(alert: Alert, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
