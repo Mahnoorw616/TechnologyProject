@@ -8,9 +8,11 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -36,6 +38,7 @@ import com.example.ainoc.ui.screens.alerts.AlertsListScreen
 import com.example.ainoc.ui.screens.dashboard.DashboardScreen
 import com.example.ainoc.ui.screens.explorer.DeviceDetailsScreen
 import com.example.ainoc.ui.screens.explorer.ExplorerScreen
+import com.example.ainoc.ui.screens.settings.*
 import com.example.ainoc.ui.theme.*
 import com.example.ainoc.util.NoRippleInteractionSource
 import kotlinx.coroutines.launch
@@ -47,20 +50,46 @@ fun MainScreen(mainNavController: NavController) {
     val contentNavController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
-    val bottomNavItems = listOf(
-        BottomNavItem("Dashboard", Screen.Dashboard.route, Icons.Filled.Dashboard, Icons.Outlined.Dashboard, false),
-        BottomNavItem("Alerts", Screen.Alerts.route, Icons.Filled.Notifications, Icons.Outlined.Notifications, true, 3),
-        BottomNavItem("Explorer", Screen.Explorer.route, Icons.Filled.Explore, Icons.Outlined.Explore, false)
-    )
+    // ---- LOGOUT DIALOG ----
+    if (showLogoutDialog) {
+        AlertDialog(
+            containerColor = CardBackground,
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Log Out?", color = AccentBeige) },
+            text = { Text("Are you sure you want to log out of your session?", color = AccentBeige.copy(alpha = 0.8f)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        mainNavController.navigate(Screen.Login.route) {
+                            popUpTo(mainNavController.graph.id) { inclusive = true }
+                        }
+                    },
+                    interactionSource = remember { NoRippleInteractionSource() }
+                ) {
+                    Text("Log Out", color = CriticalRed)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancel", color = AccentBeige)
+                }
+            }
+        )
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = true,
         drawerContent = {
             DrawerContent(
-                navController = contentNavController,
-                onCloseDrawer = { scope.launch { drawerState.close() } }
+                contentNavController = contentNavController,
+                onCloseDrawer = { scope.launch { drawerState.close() } },
+                onLogoutClick = {
+                    scope.launch { drawerState.close() }
+                    showLogoutDialog = true
+                }
             )
         }
     ) {
@@ -70,53 +99,59 @@ fun MainScreen(mainNavController: NavController) {
                     title = { Text("AI NOC", color = AccentBeige, fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, "Menu", tint = AccentBeige)
+                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = AccentBeige)
                         }
                     },
                     actions = {
-                        IconButton(onClick = { mainNavController.navigate(Screen.AccountDetails.route) }) {
-                            Icon(Icons.Default.AccountCircle, "Account", tint = AccentBeige)
+                        IconButton(onClick = {
+                            // Navigate to profile via content controller
+                            contentNavController.navigate(Screen.ProfileAndSecurity.route)
+                        }) {
+                            Icon(Icons.Default.AccountCircle, contentDescription = "Account", tint = AccentBeige)
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark.copy(alpha = 0.95f))
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = BackgroundDark.copy(alpha = 0.95f)
+                    )
                 )
             },
             bottomBar = {
-                BottomNavigationBar(
-                    items = bottomNavItems,
-                    navController = contentNavController
-                )
+                BottomNavigationBar(navController = contentNavController)
             }
-        ) { paddingValues ->
+        ) { padding ->
             Box(
                 modifier = Modifier
-                    .padding(paddingValues)
+                    .padding(padding)
                     .fillMaxSize()
                     .background(Brush.verticalGradient(listOf(SplashGradientStart, SplashGradientEnd)))
             ) {
-                MainContentNavHost(navController = contentNavController)
+                MainContentNavHost(
+                    contentNavController = contentNavController,
+                    mainNavController = mainNavController
+                )
             }
         }
     }
 }
 
 @Composable
-private fun BottomNavigationBar(items: List<BottomNavItem>, navController: NavController) {
-    var selectedItemIndex by remember { mutableIntStateOf(0) }
+private fun BottomNavigationBar(navController: NavController) {
+    val items = listOf(
+        BottomNavItem("Dashboard", Screen.Dashboard.route, Icons.Filled.Dashboard, Icons.Outlined.Dashboard, false),
+        BottomNavItem("Alerts", Screen.Alerts.route, Icons.Filled.Notifications, Icons.Outlined.Notifications, true, 3),
+        BottomNavItem("Explorer", Screen.Explorer.route, Icons.Filled.Explore, Icons.Outlined.Explore, false)
+    )
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // This ensures the selected item is always in sync with the navigation state
-    LaunchedEffect(currentRoute) {
-        selectedItemIndex = items.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
-    }
-
     NavigationBar(containerColor = CardBackground) {
-        items.forEachIndexed { index, item ->
+        items.forEach { item ->
+            val selected = currentRoute == item.route
             NavigationBarItem(
-                selected = selectedItemIndex == index,
+                selected = selected,
                 onClick = {
-                    if (selectedItemIndex != index) {
+                    if (!selected) {
                         navController.navigate(item.route) {
                             popUpTo(navController.graph.startDestinationId) { saveState = true }
                             launchSingleTop = true
@@ -124,39 +159,41 @@ private fun BottomNavigationBar(items: List<BottomNavItem>, navController: NavCo
                         }
                     }
                 },
-                label = { Text(item.title) },
                 icon = {
-                    BadgedBox(badge = { if (item.badgeCount != null) Badge { Text("${item.badgeCount}") } }) {
-                        Icon(if (selectedItemIndex == index) item.selectedIcon else item.unselectedIcon, contentDescription = item.title)
+                    BadgedBox(badge = { item.badgeCount?.let { Badge { Text("$it") } } }) {
+                        Icon(if (selected) item.selectedIcon else item.unselectedIcon, contentDescription = item.title)
                     }
                 },
                 alwaysShowLabel = false,
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = PrimaryPurple,
-                    selectedTextColor = PrimaryPurple,
                     unselectedIconColor = AccentBeige.copy(alpha = 0.6f),
-                    unselectedTextColor = AccentBeige.copy(alpha = 0.6f),
                     indicatorColor = Color.Transparent
                 ),
-                interactionSource = remember { NoRippleInteractionSource() } // Removes click effect
+                interactionSource = remember { NoRippleInteractionSource() }
             )
         }
     }
 }
 
 @Composable
-private fun DrawerContent(navController: NavController, onCloseDrawer: () -> Unit) {
+private fun DrawerContent(
+    contentNavController: NavController,
+    onCloseDrawer: () -> Unit,
+    onLogoutClick: () -> Unit
+) {
     ModalDrawerSheet(drawerContainerColor = BackgroundDark) {
         Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(painterResource(R.drawable.ai_noc_logo), "Logo", modifier = Modifier.size(80.dp))
+            Modifier.fillMaxWidth().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(painterResource(R.drawable.ai_noc_logo), "Logo", Modifier.size(80.dp))
             Spacer(Modifier.height(8.dp))
             Text("Admin AI NOC", fontWeight = FontWeight.Bold, color = AccentBeige)
-            Text("Administrator", fontSize = 14.sp, color = PrimaryPurple)
+            Text("adminainoc@gmail.com", color = PrimaryPurple, fontSize = 14.sp)
         }
-        Divider(Modifier.padding(vertical = 16.dp), color = CardBackground)
+
+        HorizontalDivider(Modifier.padding(vertical = 16.dp), color = CardBackground)
 
         val drawerItems = listOf(
             "Asset Management" to Icons.Outlined.Dns,
@@ -172,75 +209,97 @@ private fun DrawerContent(navController: NavController, onCloseDrawer: () -> Uni
             contentPadding = PaddingValues(horizontal = 12.dp)
         ) {
             items(drawerItems) { (title, icon) ->
+                val route = when (title) {
+                    "Asset Management" -> Screen.Explorer.route
+                    "Maintenance Windows" -> Screen.MaintenanceWindows.route
+                    "Reports" -> Screen.Alerts.route
+                    "AI Management" -> Screen.AiManagement.route
+                    else -> Screen.Settings.route
+                }
+
                 NavigationDrawerItem(
                     label = { Text(title) },
                     selected = false,
                     onClick = {
                         onCloseDrawer()
-                        // Use placeholder navigation for now, navigating to settings
-                        val route = when (title) {
-                            "Asset Management" -> Screen.Explorer.route
-                            else -> Screen.Settings.route
+                        contentNavController.navigate(route) {
+                            popUpTo(contentNavController.graph.startDestinationId)
+                            launchSingleTop = true
                         }
-                        navController.navigate(route) { popUpTo(navController.graph.startDestinationId) }
                     },
-                    icon = { Icon(icon, title) },
-                    colors = NavigationDrawerItemDefaults.colors(
-                        unselectedTextColor = AccentBeige,
-                        unselectedIconColor = AccentBeige
+                    icon = { Icon(icon, contentDescription = title, tint = PrimaryPurple) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = AccentBeige),
+                    modifier = Modifier.border(
+                        1.dp, Brush.verticalGradient(listOf(PrimaryPurple.copy(alpha = 0.3f), Color.Transparent)),
+                        RoundedCornerShape(12.dp)
                     ),
-                    interactionSource = remember { NoRippleInteractionSource() } // Removes click effect
+                    interactionSource = remember { NoRippleInteractionSource() }
                 )
             }
         }
 
-        Divider(Modifier.padding(vertical = 8.dp), color = CardBackground)
+        HorizontalDivider(Modifier.padding(12.dp), color = CardBackground)
 
         NavigationDrawerItem(
             label = { Text("Logout") },
             selected = false,
-            onClick = { /* TODO: Implement Logout Logic with confirmation */ },
-            icon = { Icon(Icons.Outlined.Logout, "Logout") },
-            colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = AccentBeige, unselectedIconColor = AccentBeige),
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            interactionSource = remember { NoRippleInteractionSource() } // Removes click effect
+            onClick = onLogoutClick,
+            icon = { Icon(Icons.Outlined.Logout, "Logout", tint = PrimaryPurple) },
+            colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = AccentBeige),
+            interactionSource = remember { NoRippleInteractionSource() }
         )
     }
 }
+
 @Composable
-private fun MainContentNavHost(navController: NavHostController) {
-    NavHost(navController, startDestination = Screen.Dashboard.route) {
-        val fadeSpec = tween<Float>(300)
+private fun MainContentNavHost(
+    contentNavController: NavHostController,
+    mainNavController: NavController
+) {
+    NavHost(
+        navController = contentNavController,
+        startDestination = Screen.Dashboard.route,
+        enterTransition = { fadeIn(tween(300)) },
+        exitTransition = { fadeOut(tween(300)) }
+    ) {
         val slideSpec = tween<IntOffset>(350)
 
         composable(Screen.Dashboard.route) { DashboardScreen() }
-        composable(Screen.Alerts.route) { AlertsListScreen(navController) }
-        composable(Screen.Explorer.route) { ExplorerScreen(navController) } // Add ExplorerScreen
-        composable(Screen.Settings.route) { GenericScreen("Settings") }
+        composable(Screen.Alerts.route) { AlertsListScreen(contentNavController) }
+        composable(Screen.Explorer.route) { ExplorerScreen(contentNavController) }
 
-        composable(
-            route = Screen.AlertDetails.route,
-            // ... transitions
-        ) { backStackEntry ->
-            val alertId = backStackEntry.arguments?.getString("alertId") ?: "N/A"
-            AlertDetailsScreen(alertId, navController)
+        // FIX: Pass BOTH nav controllers to Settings
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                contentNavController = contentNavController,
+                mainNavController = mainNavController
+            )
         }
 
-        // New route for Device Details
+        composable(Screen.ProfileAndSecurity.route) { ProfileAndSecurityScreen(contentNavController) }
+        composable(Screen.ThemeSettings.route) { ThemeSettingsScreen(contentNavController) }
+        composable(Screen.NotificationSettings.route) { NotificationSettingsScreen(contentNavController) }
+        composable(Screen.AiManagement.route) { AiManagementScreen(contentNavController) }
+        composable(Screen.MaintenanceWindows.route) { MaintenanceWindowsScreen(contentNavController) }
+        composable(Screen.About.route) { AboutScreen(contentNavController) }
+
         composable(
-            route = "device_details/{deviceId}",
+            Screen.AlertDetails.route,
+            enterTransition = { slideInHorizontally(slideSpec) { it } },
+            exitTransition = { slideOutHorizontally(slideSpec) { -it } }
+        ) { backStackEntry ->
+            val alertId = backStackEntry.arguments?.getString("alertId") ?: "N/A"
+            AlertDetailsScreen(alertId, contentNavController)
+        }
+
+        composable(
+            "device_details/{deviceId}",
             enterTransition = { slideInHorizontally(slideSpec) { it } },
             exitTransition = { slideOutHorizontally(slideSpec) { -it } }
         ) { backStackEntry ->
             val deviceId = backStackEntry.arguments?.getString("deviceId") ?: "N/A"
-            DeviceDetailsScreen(deviceId, navController)
+            DeviceDetailsScreen(deviceId, contentNavController)
         }
-    }
-}
-
-@Composable
-fun GenericScreen(name: String) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("$name Screen", style = MaterialTheme.typography.headlineMedium, color = AccentBeige)
     }
 }
