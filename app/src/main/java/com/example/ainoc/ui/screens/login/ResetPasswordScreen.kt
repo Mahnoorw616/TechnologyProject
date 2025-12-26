@@ -22,8 +22,13 @@ fun ResetPasswordScreen(
     navController: NavController,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
-    val resetEmail by viewModel.resetEmail.collectAsState()
-    val resetState by viewModel.resetPasswordState.collectAsState()
+    // --- THIS IS THE FIX ---
+    // Observe the single uiState object
+    val uiState by viewModel.uiState.collectAsState()
+    // Destructure the state for easier access in the UI
+    val resetEmail = uiState.resetEmail
+    val resetState = uiState.resetPasswordResource
+    // -----------------------
 
     Scaffold(
         topBar = {
@@ -46,16 +51,27 @@ fun ResetPasswordScreen(
             verticalArrangement = Arrangement.Center
         ) {
             if (resetState is Resource.Success) {
-                Text("Success!", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    "Success!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Spacer(Modifier.height(16.dp))
-                Text("If an account exists for $resetEmail, you will receive an email with a link to reset your password.", textAlign = TextAlign.Center)
+                Text(
+                    "If an account exists for $resetEmail, you will receive an email with a link to reset your password.",
+                    textAlign = TextAlign.Center
+                )
             } else {
-                Text("Enter your account email to receive a password reset link.", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                Text(
+                    "Enter your account email to receive a password reset link.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
+                )
                 Spacer(Modifier.height(32.dp))
 
                 OutlinedTextField(
                     value = resetEmail,
-                    onValueChange = viewModel::onResetEmailChange,
+                    onValueChange = viewModel::onResetEmailChange, // Correct function call
                     label = { Text("Email Address") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -65,9 +81,7 @@ fun ResetPasswordScreen(
                         unfocusedTextColor = AccentBeige,
                         cursorColor = PrimaryPurple,
                         focusedBorderColor = PrimaryPurple,
-                        unfocusedBorderColor = AccentBeige.copy(alpha = 0.5f),
-                        focusedLabelColor = PrimaryPurple,
-                        unfocusedLabelColor = AccentBeige.copy(alpha = 0.7f)
+                        unfocusedBorderColor = AccentBeige.copy(alpha = 0.5f)
                     )
                 )
                 Spacer(Modifier.height(24.dp))
@@ -76,8 +90,10 @@ fun ResetPasswordScreen(
                     CircularProgressIndicator(color = PrimaryPurple)
                 } else {
                     Button(
-                        onClick = { viewModel.sendPasswordResetLink() },
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        onClick = { viewModel.sendPasswordResetLink() }, // Correct function call
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
                         enabled = resetEmail.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
                     ) {

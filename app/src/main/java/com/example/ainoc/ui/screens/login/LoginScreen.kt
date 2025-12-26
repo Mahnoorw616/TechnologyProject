@@ -25,6 +25,7 @@ import androidx.navigation.NavController
 import com.example.ainoc.R
 import com.example.ainoc.ui.navigation.Screen
 import com.example.ainoc.ui.theme.*
+import com.example.ainoc.util.NoRippleInteractionSource
 import com.example.ainoc.util.Resource
 import com.example.ainoc.viewmodel.LoginViewModel
 
@@ -34,27 +35,22 @@ fun LoginScreen(
     navController: NavController,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
-    val serverUrl by viewModel.serverUrl.collectAsState()
-    val username by viewModel.username.collectAsState()
-    val password by viewModel.password.collectAsState()
-    val rememberUrl by viewModel.rememberUrl.collectAsState()
-    val loginState by viewModel.loginState.collectAsState()
-    val passwordVisible by viewModel.passwordVisible.collectAsState()
-
+    val uiState by viewModel.uiState.collectAsState()
+    val loginResource = uiState.loginResource
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(loginState) {
-        when (loginState) {
+    LaunchedEffect(loginResource) {
+        when (loginResource) {
             is Resource.Success -> {
                 navController.navigate(Screen.MfaEmail.route)
-                viewModel.clearLoginError()
+                viewModel.consumeLoginEvent() // Prevent re-triggering
             }
             is Resource.Error -> {
                 snackbarHostState.showSnackbar(
-                    message = (loginState as Resource.Error<Unit>).message ?: "An unknown error occurred",
+                    message = loginResource.message ?: "An unknown error occurred",
                     duration = SnackbarDuration.Short
                 )
-                viewModel.clearLoginError()
+                viewModel.consumeLoginEvent() // Also reset after showing error
             }
             else -> {}
         }
@@ -76,22 +72,15 @@ fun LoginScreen(
             Image(
                 painter = painterResource(id = R.drawable.ai_noc_logo),
                 contentDescription = "AI-NOC Logo",
-                modifier = Modifier
-                    .size(90.dp)
-                    .padding(bottom = 16.dp)
+                modifier = Modifier.size(90.dp).padding(bottom = 16.dp)
             )
 
-            Text(
-                "Welcome to AI-NOC",
-                style = MaterialTheme.typography.headlineMedium,
-                color = AccentBeige
-            )
+            Text("Welcome to AI-NOC", style = MaterialTheme.typography.headlineMedium, color = AccentBeige)
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- THIS IS THE DEFINITIVE FIX ---
             val textFieldColors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedTextColor = AccentBeige, // Correct parameter for text color when focused
-                unfocusedTextColor = AccentBeige, // Correct parameter for text color when unfocused
+                focusedTextColor = AccentBeige,
+                unfocusedTextColor = AccentBeige,
                 cursorColor = PrimaryPurple,
                 focusedBorderColor = PrimaryPurple,
                 unfocusedBorderColor = AccentBeige.copy(alpha = 0.5f),
@@ -101,57 +90,54 @@ fun LoginScreen(
                 unfocusedTrailingIconColor = AccentBeige.copy(alpha = 0.7f)
             )
 
-            OutlinedTextField(value = serverUrl, onValueChange = viewModel::onServerUrlChange, label = { Text("Server URL") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = textFieldColors)
+            OutlinedTextField(value = uiState.serverUrl, onValueChange = viewModel::onServerUrlChange, label = { Text("Server URL") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = textFieldColors)
             Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(value = username, onValueChange = viewModel::onUsernameChange, label = { Text("Username / Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = textFieldColors)
+            OutlinedTextField(value = uiState.username, onValueChange = viewModel::onUsernameChange, label = { Text("Username / Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = textFieldColors)
             Spacer(modifier = Modifier.height(16.dp))
-
             OutlinedTextField(
-                value = password,
+                value = uiState.password,
                 onValueChange = viewModel::onPasswordChange,
                 label = { Text("Password") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (uiState.passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
-                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    val image = if (uiState.passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                     IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
-                        Icon(imageVector = image, contentDescription = if (passwordVisible) "Hide password" else "Show password")
+                        Icon(imageVector = image, contentDescription = if (uiState.passwordVisible) "Hide password" else "Show password")
                     }
                 },
                 colors = textFieldColors
             )
             Spacer(modifier = Modifier.height(16.dp))
-
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Checkbox(
-                    checked = rememberUrl,
-                    onCheckedChange = viewModel::onRememberUrlChange,
+                    checked = uiState.rememberUrl,
+                    onCheckedChange = { viewModel.onRememberUrlChange(it) },
                     colors = CheckboxDefaults.colors(checkedColor = PrimaryPurple)
                 )
                 Text("Remember Server URL", modifier = Modifier.padding(start = 8.dp), color = AccentBeige)
             }
             Spacer(modifier = Modifier.height(24.dp))
 
-            if (loginState is Resource.Loading) {
+            if (loginResource is Resource.Loading) {
                 CircularProgressIndicator(color = PrimaryPurple)
             } else {
                 Button(
                     onClick = { viewModel.loginUser() },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryPurple,
-                        contentColor = AccentBeige
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple, contentColor = AccentBeige),
+                    interactionSource = remember { NoRippleInteractionSource() }
                 ) {
                     Text("Login")
                 }
             }
-
-            TextButton(onClick = { navController.navigate(Screen.ResetPassword.route) }) {
+            TextButton(
+                onClick = { navController.navigate(Screen.ResetPassword.route) },
+                interactionSource = remember { NoRippleInteractionSource() }
+            ) {
                 Text("Forgot Password?", color = PrimaryPurple)
             }
         }

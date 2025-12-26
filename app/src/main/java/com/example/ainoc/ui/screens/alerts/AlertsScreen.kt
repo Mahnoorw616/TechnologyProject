@@ -75,7 +75,10 @@ fun AlertsListScreen(navController: NavController, viewModel: AlertsViewModel = 
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
             Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 smartFilters.forEach { filter ->
@@ -294,8 +297,8 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                             Text("Fusion Engine Score: ${d.fusionScore} (Critical)", color = CriticalRed, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(12.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = {}, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)) { Text("Assign") }
-                                Button(onClick = { viewModel.updateAlertStatus(AlertStatus.ACKNOWLEDGED) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)) { Text("Acknowledge") }
+                                Button(onClick = {}, modifier = Modifier.weight(1f)) { Text("Assign") }
+                                Button(onClick = { viewModel.updateAlertStatus(AlertStatus.ACKNOWLEDGED) }, modifier = Modifier.weight(1f)) { Text("Acknowledge") }
                                 Button(onClick = {}, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = WarningYellow)) { Text("False Positive") }
                             }
                         }

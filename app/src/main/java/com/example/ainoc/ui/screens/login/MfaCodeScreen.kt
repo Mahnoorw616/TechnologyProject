@@ -5,10 +5,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -28,18 +25,22 @@ fun MfaCodeScreen(
     navController: NavController,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
-    val mfaCode by viewModel.mfaCode.collectAsState()
-    val mfaCodeState by viewModel.mfaCodeState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val mfaCodeResource = uiState.mfaCodeResource
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(mfaCodeState) {
-        if (mfaCodeState is Resource.Success<*>) {
+    LaunchedEffect(mfaCodeResource) {
+        if (mfaCodeResource is Resource.Success) {
             navController.navigate(Screen.Main.route) {
                 popUpTo(Screen.Login.route) { inclusive = true }
             }
+        } else if (mfaCodeResource is Resource.Error) {
+            snackbarHostState.showSnackbar(mfaCodeResource.message ?: "An error occurred")
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Enter Verification Code") },
@@ -52,21 +53,18 @@ fun MfaCodeScreen(
         }
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(32.dp),
+            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(32.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Check your Authenticator App", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
             Spacer(Modifier.height(16.dp))
-            Text("Enter the 6-digit code provided by your authenticator app (e.g., Google Authenticator).", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
+            Text("Enter the 6-digit code for your account: ${uiState.mfaEmail}", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
             Spacer(Modifier.height(32.dp))
 
             OutlinedTextField(
-                value = mfaCode,
-                onValueChange = { if (it.length <= 6) viewModel.onMfaCodeChange(it) },
+                value = uiState.mfaCode,
+                onValueChange = { viewModel.onMfaCodeChange(it) },
                 label = { Text("6-Digit Code") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -76,21 +74,29 @@ fun MfaCodeScreen(
                     unfocusedTextColor = AccentBeige,
                     cursorColor = PrimaryPurple,
                     focusedBorderColor = PrimaryPurple,
-                    unfocusedBorderColor = AccentBeige.copy(alpha = 0.5f),
-                    focusedLabelColor = PrimaryPurple,
-                    unfocusedLabelColor = AccentBeige.copy(alpha = 0.7f)
+                    unfocusedBorderColor = AccentBeige.copy(alpha = 0.5f)
                 )
             )
-            Spacer(Modifier.height(24.dp))
 
-            if (mfaCodeState is Resource.Loading) {
+            Spacer(Modifier.height(8.dp))
+
+            val resendButtonEnabled = !uiState.isResendTimerRunning && mfaCodeResource !is Resource.Loading
+            TextButton(
+                onClick = { viewModel.sendMfaCode(isResend = true) }, // Corrected call
+                enabled = resendButtonEnabled
+            ) {
+                Text(if (resendButtonEnabled) "Send Code Again" else "Resend available in ${uiState.resendTimerSeconds}s")
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            if (mfaCodeResource is Resource.Loading) {
                 CircularProgressIndicator(color = PrimaryPurple)
             } else {
                 Button(
                     onClick = { viewModel.verifyMfaCode() },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
-                    enabled = mfaCode.length == 6,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
+                    enabled = uiState.mfaCode.length == 6
                 ) {
                     Text("Verify & Login")
                 }

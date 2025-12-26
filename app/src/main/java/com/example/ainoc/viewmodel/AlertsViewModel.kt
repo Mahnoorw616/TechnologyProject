@@ -46,7 +46,7 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
         val baseAlerts = fullAlertDetailsList.map { it.baseInfo }
         _allAlerts.value = baseAlerts
 
-        // This is a reactive pipeline.
+        // This is a reactive pipeline. Whenever any filter changes, the final list is automatically recalculated.
         viewModelScope.launch {
             combine(_allAlerts, _activeSmartFilter, _searchQuery, _advancedFilterState) { alerts, smartFilter, query, advancedFilters ->
                 var filteredList = alerts
@@ -84,12 +84,12 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
 
     fun onSmartFilterClicked(filter: String) {
         _activeSmartFilter.value = filter
-        _advancedFilterState.value = AdvancedFilterState()
+        _advancedFilterState.value = AdvancedFilterState() // Reset advanced filters
     }
 
     fun onSearchQueryChanged(query: String) { _searchQuery.value = query }
     fun toggleSearch() {
-        if (_uiState.value.isSearchActive) _searchQuery.value = ""
+        if (_uiState.value.isSearchActive) _searchQuery.value = "" // Clear search when closing
         _uiState.update { it.copy(isSearchActive = !it.isSearchActive) }
     }
 
@@ -112,7 +112,7 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
 
     fun resetAdvancedFilters() { _advancedFilterState.value = AdvancedFilterState() }
     fun applyAdvancedFilters() {
-        _activeSmartFilter.value = "All"
+        _activeSmartFilter.value = "All" // Advanced filters override smart filters
         hideAdvancedFilter()
     }
 

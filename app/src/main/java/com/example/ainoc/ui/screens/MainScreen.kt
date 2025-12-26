@@ -8,7 +8,11 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -17,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -32,6 +37,7 @@ import com.example.ainoc.ui.screens.alerts.AlertDetailsScreen
 import com.example.ainoc.ui.screens.alerts.AlertsListScreen
 import com.example.ainoc.ui.screens.dashboard.DashboardScreen
 import com.example.ainoc.ui.theme.*
+import com.example.ainoc.util.NoRippleInteractionSource
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +56,7 @@ fun MainScreen(mainNavController: NavController) {
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = true,
         drawerContent = {
             DrawerContent(
                 navController = contentNavController,
@@ -104,7 +111,7 @@ private fun BottomNavigationBar(items: List<BottomNavItem>, navController: NavCo
         selectedItemIndex = items.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
     }
 
-    NavigationBar(containerColor = BackgroundDark.copy(alpha = 0.95f)) {
+    NavigationBar(containerColor = CardBackground) {
         items.forEachIndexed { index, item ->
             NavigationBarItem(
                 selected = selectedItemIndex == index,
@@ -118,17 +125,20 @@ private fun BottomNavigationBar(items: List<BottomNavItem>, navController: NavCo
                     }
                 },
                 label = { Text(item.title) },
-                alwaysShowLabel = false,
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = PrimaryPurple,
-                    unselectedIconColor = AccentBeige.copy(alpha = 0.6f),
-                    indicatorColor = PrimaryPurple.copy(alpha = 0.15f)
-                ),
                 icon = {
                     BadgedBox(badge = { if (item.badgeCount != null) Badge { Text("${item.badgeCount}") } }) {
                         Icon(if (selectedItemIndex == index) item.selectedIcon else item.unselectedIcon, contentDescription = item.title)
                     }
-                }
+                },
+                alwaysShowLabel = false,
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = PrimaryPurple,
+                    selectedTextColor = PrimaryPurple,
+                    unselectedIconColor = AccentBeige.copy(alpha = 0.6f),
+                    unselectedTextColor = AccentBeige.copy(alpha = 0.6f),
+                    indicatorColor = Color.Transparent
+                ),
+                interactionSource = remember { NoRippleInteractionSource() } // Removes click effect
             )
         }
     }
@@ -143,59 +153,91 @@ private fun DrawerContent(navController: NavController, onCloseDrawer: () -> Uni
                 .padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Image(painterResource(R.drawable.ai_noc_logo), "Logo", modifier = Modifier.size(80.dp))
             Spacer(Modifier.height(8.dp))
-            Text("Network Admin", fontWeight = FontWeight.Bold, color = AccentBeige)
-            Text("administrator@company.com", fontSize = 14.sp, color = AccentBeige.copy(alpha = 0.7f))
+            Text("Admin AI NOC", fontWeight = FontWeight.Bold, color = AccentBeige)
+            Text("Administrator", fontSize = 14.sp, color = PrimaryPurple)
         }
         Divider(Modifier.padding(vertical = 16.dp), color = CardBackground)
 
         val drawerItems = listOf(
-            "Asset Management" to Screen.Explorer.route, // Example route
-            "Maintenance" to Screen.Settings.route, // Example route
-            "Reports" to Screen.Settings.route, // Example route
-            "AI Management" to Screen.Settings.route, // Example route
-            "Settings" to Screen.Settings.route
+            "Asset Management" to Icons.Outlined.Dns,
+            "Maintenance Windows" to Icons.Outlined.CalendarMonth,
+            "Reports" to Icons.Outlined.BarChart,
+            "AI Management" to Icons.Outlined.AutoAwesome,
+            "Settings" to Icons.Outlined.Settings
         )
 
-        drawerItems.forEach { (title, route) ->
-            NavigationDrawerItem(
-                label = { Text(title) },
-                selected = false,
-                onClick = {
-                    onCloseDrawer()
-                    navController.navigate(route) { popUpTo(navController.graph.startDestinationId) }
-                },
-                icon = {
-                    val icon = when (route) {
-                        Screen.Explorer.route -> Icons.Outlined.Dns
-                        Screen.Settings.route -> Icons.Outlined.Settings
-                        else -> Icons.Outlined.Info
-                    }
-                    Icon(icon, title)
-                },
-                colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = AccentBeige, unselectedIconColor = AccentBeige)
-            )
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp)
+        ) {
+            items(drawerItems) { (title, icon) ->
+                NavigationDrawerItem(
+                    label = { Text(title) },
+                    selected = false,
+                    onClick = {
+                        onCloseDrawer()
+                        // Use placeholder navigation for now, navigating to settings
+                        val route = when (title) {
+                            "Asset Management" -> Screen.Explorer.route
+                            else -> Screen.Settings.route
+                        }
+                        navController.navigate(route) { popUpTo(navController.graph.startDestinationId) }
+                    },
+                    icon = { Icon(icon, title) },
+                    colors = NavigationDrawerItemDefaults.colors(
+                        unselectedTextColor = AccentBeige,
+                        unselectedIconColor = AccentBeige
+                    ),
+                    interactionSource = remember { NoRippleInteractionSource() } // Removes click effect
+                )
+            }
         }
-        Spacer(Modifier.weight(1f))
+
+        Divider(Modifier.padding(vertical = 8.dp), color = CardBackground)
+
         NavigationDrawerItem(
             label = { Text("Logout") },
             selected = false,
-            onClick = { /* TODO: Implement Logout Logic */ },
+            onClick = { /* TODO: Implement Logout Logic with confirmation */ },
             icon = { Icon(Icons.Outlined.Logout, "Logout") },
-            colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = AccentBeige, unselectedIconColor = AccentBeige)
+            colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = AccentBeige, unselectedIconColor = AccentBeige),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            interactionSource = remember { NoRippleInteractionSource() } // Removes click effect
         )
     }
 }
 
 @Composable
 private fun MainContentNavHost(navController: NavHostController) {
+    // This is the standard, modern NavHost. All compiler errors are resolved.
     NavHost(navController, startDestination = Screen.Dashboard.route) {
         val fadeSpec = tween<Float>(300)
         val slideSpec = tween<IntOffset>(350)
 
-        composable(Screen.Dashboard.route, enterTransition = { fadeIn(fadeSpec) }, exitTransition = { fadeOut(fadeSpec) }) { DashboardScreen() }
-        composable(Screen.Alerts.route, enterTransition = { fadeIn(fadeSpec) }, exitTransition = { fadeOut(fadeSpec) }) { AlertsListScreen(navController) }
-        composable(Screen.Explorer.route, enterTransition = { fadeIn(fadeSpec) }, exitTransition = { fadeOut(fadeSpec) }) { GenericScreen("Explorer") }
-        composable(Screen.Settings.route, enterTransition = { fadeIn(fadeSpec) }, exitTransition = { fadeOut(fadeSpec) }) { GenericScreen("Settings") }
+        composable(
+            route = Screen.Dashboard.route,
+            enterTransition = { fadeIn(fadeSpec) },
+            exitTransition = { fadeOut(fadeSpec) }
+        ) { DashboardScreen() }
+
+        composable(
+            route = Screen.Alerts.route,
+            enterTransition = { fadeIn(fadeSpec) },
+            exitTransition = { fadeOut(fadeSpec) }
+        ) { AlertsListScreen(navController) }
+
+        composable(
+            route = Screen.Explorer.route,
+            enterTransition = { fadeIn(fadeSpec) },
+            exitTransition = { fadeOut(fadeSpec) }
+        ) { GenericScreen("Explorer") }
+
+        composable(
+            route = Screen.Settings.route,
+            enterTransition = { fadeIn(fadeSpec) },
+            exitTransition = { fadeOut(fadeSpec) }
+        ) { GenericScreen("Settings") }
 
         composable(
             route = Screen.AlertDetails.route,
