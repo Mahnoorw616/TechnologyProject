@@ -46,18 +46,18 @@ import com.example.ainoc.viewmodel.AdvancedFilterState
 import com.example.ainoc.viewmodel.AlertsViewModel
 import kotlinx.coroutines.launch
 
-// This is the main screen that shows a list of all active alerts.
-// It includes a search bar, filter chips at the top, and the scrolling list of alert cards.
+// This screen shows the main list of all alerts.
+// You can search, filter, and tap on an alert to see more details.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlertsListScreen(navController: NavController, viewModel: AlertsViewModel = hiltViewModel()) {
-    // Watches the data from the ViewModel. If the list of alerts changes, the screen redraws.
+    // Watches the live list of alerts and filter settings.
     val uiState by viewModel.uiState.collectAsState()
     val smartFilters by remember { mutableStateOf(viewModel.smartFilters) }
     val activeFilter by viewModel.activeSmartFilter.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
 
-    // Shows the advanced filter popup if the user clicked the filter button.
+    // Shows the advanced filter popup if the user clicked the filter icon.
     if (uiState.isAdvancedFilterVisible) {
         AdvancedFilterModal(
             filterState = uiState.advancedFilterState,
@@ -71,7 +71,7 @@ fun AlertsListScreen(navController: NavController, viewModel: AlertsViewModel = 
 
     Scaffold(
         topBar = {
-            // Switches between the regular title bar and the search bar when the search icon is clicked.
+            // Switches between the regular title bar and the search bar.
             if (uiState.isSearchActive) {
                 SearchAppBar(
                     query = searchQuery,
@@ -88,7 +88,7 @@ fun AlertsListScreen(navController: NavController, viewModel: AlertsViewModel = 
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
-            // A horizontal scrolling row of quick filter buttons (e.g., "All", "Critical", "New").
+            // A horizontal scrolling row of filter buttons (e.g., "Critical", "New").
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -102,6 +102,7 @@ fun AlertsListScreen(navController: NavController, viewModel: AlertsViewModel = 
                         selected = isSelected,
                         onClick = { viewModel.onSmartFilterClicked(filter) },
                         label = { Text(filter) },
+                        enabled = true,
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             containerColor = MaterialTheme.colorScheme.surface,
@@ -109,7 +110,6 @@ fun AlertsListScreen(navController: NavController, viewModel: AlertsViewModel = 
                             labelColor = MaterialTheme.colorScheme.onSurface
                         ),
                         interactionSource = remember { NoRippleInteractionSource() },
-                        // FIX: Explicitly passed 'enabled' and 'selected' parameters to fix the error.
                         border = FilterChipDefaults.filterChipBorder(
                             enabled = true,
                             selected = isSelected,
@@ -119,15 +119,13 @@ fun AlertsListScreen(navController: NavController, viewModel: AlertsViewModel = 
                 }
             }
 
-            // The main list of alerts. It efficiently loads items only as you scroll down.
+            // The scrolling list of alert cards.
             LazyColumn(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(uiState.filteredAlerts, key = { it.id }) { alert ->
-                    // For each alert in the list, draw an AlertCard.
                     AlertCard(alert = alert, onClick = {
-                        // When clicked, go to the details screen for this specific alert.
                         navController.navigate(Screen.AlertDetails.createRoute(alert.id))
                     })
                 }
@@ -136,7 +134,7 @@ fun AlertsListScreen(navController: NavController, viewModel: AlertsViewModel = 
     }
 }
 
-// The standard top bar showing the screen title "Alerts" and action buttons.
+// Shows the standard title "Alerts" and the Search/Filter buttons.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DefaultAppBar(onSearchClick: () -> Unit, onFilterClick: () -> Unit) {
@@ -160,7 +158,7 @@ private fun DefaultAppBar(onSearchClick: () -> Unit, onFilterClick: () -> Unit) 
     )
 }
 
-// The alternate top bar that appears when searching. It contains a text input field.
+// Shows the search bar with a text input field.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchAppBar(query: String, onQueryChange: (String) -> Unit, onClose: () -> Unit) {
@@ -191,7 +189,6 @@ private fun SearchAppBar(query: String, onQueryChange: (String) -> Unit, onClose
         actions = {
             IconButton(
                 onClick = {
-                    // If text exists, clear it. If empty, close the search bar.
                     if (query.isNotEmpty()) onQueryChange("") else {
                         focusManager.clearFocus()
                         onClose()
@@ -206,8 +203,7 @@ private fun SearchAppBar(query: String, onQueryChange: (String) -> Unit, onClose
     )
 }
 
-// This draws a single row in the alerts list.
-// It shows the alert title, priority color, time, and status.
+// Draws a single alert card in the list.
 @Composable
 fun AlertCard(alert: Alert, onClick: () -> Unit) {
     Card(
@@ -223,14 +219,14 @@ fun AlertCard(alert: Alert, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-            // A colored strip on the left edge indicating priority (Red/Yellow/etc).
+            // Colored priority strip on the left edge.
             Box(
                 modifier = Modifier
                     .width(6.dp)
                     .fillMaxHeight()
                     .background(alert.priority.color)
             )
-            // The main content area of the card.
+            // Main content of the card.
             Row(
                 modifier = Modifier
                     .padding(16.dp)
@@ -261,14 +257,14 @@ fun AlertCard(alert: Alert, onClick: () -> Unit) {
                     )
                 }
                 Spacer(Modifier.width(8.dp))
-                // A pill-shaped tag showing the current status (e.g., "New", "Resolved").
+                // Colored status badge.
                 StatusTag(status = alert.status)
             }
         }
     }
 }
 
-// Draws the small colored badge indicating the alert status.
+// Draws the small colored status pill (e.g., "New", "Resolved").
 @Composable
 private fun StatusTag(status: AlertStatus, modifier: Modifier = Modifier) {
     val (color, textColor) = when (status) {
@@ -292,7 +288,7 @@ private fun StatusTag(status: AlertStatus, modifier: Modifier = Modifier) {
     }
 }
 
-// This is the popup dialog for selecting detailed filters (Status and Priority).
+// Shows the advanced filter popup dialog.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AdvancedFilterModal(
@@ -349,7 +345,6 @@ private fun AdvancedFilterModal(
                 modifier = Modifier.padding(padding),
                 contentPadding = PaddingValues(16.dp)
             ) {
-                // Section for Priority checkboxes
                 item {
                     Text("Priority", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
                     Spacer(Modifier.height(8.dp))
@@ -362,7 +357,6 @@ private fun AdvancedFilterModal(
                     }
                 }
                 item { Spacer(Modifier.height(24.dp)) }
-                // Section for Status checkboxes
                 item {
                     Text("Status", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
                     Spacer(Modifier.height(8.dp))
@@ -379,7 +373,7 @@ private fun AdvancedFilterModal(
     }
 }
 
-// Draws a single row in the filter modal with a checkbox and text label.
+// Draws a single checkbox row in the filter dialog.
 @Composable
 private fun FilterCheckboxRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
@@ -407,8 +401,8 @@ private fun FilterCheckboxRow(text: String, checked: Boolean, onCheckedChange: (
     }
 }
 
-// This screen shows the full details of a single selected alert.
-// It displays cards for AI insights, evidence, graphs, and a chat log.
+// This screen shows the full details of a specific alert.
+// It includes actions like Assign, Acknowledge, and a log of events.
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel: AlertsViewModel = hiltViewModel()) {
@@ -416,7 +410,6 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
     val details = uiState.alertDetails
     var statusDropdownExpanded by remember { mutableStateOf(false) }
 
-    // Load the specific alert details when this screen opens.
     LaunchedEffect(alertId) {
         viewModel.loadAlertDetails(alertId)
     }
@@ -436,7 +429,7 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                 actions = {
                     details?.let {
                         Box {
-                            // Status tag acts as a button to change the status (Acknowledge/Resolve).
+                            // Status tag that opens a dropdown menu.
                             StatusTag(
                                 status = it.baseInfo.status,
                                 modifier = Modifier.clickable(
@@ -483,7 +476,7 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // Info Card: Basic details and action buttons.
+                // Info Card with buttons.
                 item {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -495,10 +488,11 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                             Text("Fusion Engine Score: ${d.fusionScore} (Critical)", color = CriticalRed, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(16.dp))
 
-                            // Buttons Row with Adjusted Alignment
+                            // Action Buttons
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                // Assign Button
                                 Button(
-                                    onClick = {},
+                                    onClick = { viewModel.assignAlert() },
                                     modifier = Modifier.weight(1f),
                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                     contentPadding = PaddingValues(horizontal = 4.dp),
@@ -507,6 +501,7 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                                 ) {
                                     Text("Assign", color = MaterialTheme.colorScheme.onPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium)
                                 }
+                                // Acknowledge Button
                                 Button(
                                     onClick = { viewModel.updateAlertStatus(AlertStatus.ACKNOWLEDGED) },
                                     modifier = Modifier.weight(1f),
@@ -517,8 +512,9 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                                 ) {
                                     Text("Acknowledge", color = MaterialTheme.colorScheme.onPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium)
                                 }
+                                // False Positive Button
                                 Button(
-                                    onClick = {},
+                                    onClick = { viewModel.updateAlertStatus(AlertStatus.FALSE_POSITIVE) },
                                     modifier = Modifier.weight(1f),
                                     colors = ButtonDefaults.buttonColors(containerColor = WarningYellow),
                                     contentPadding = PaddingValues(horizontal = 4.dp),
@@ -573,8 +569,7 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
     }
 }
 
-// Draws the tabbed section for Performance, Logs, and Threat Intel.
-// It uses a pager to let you swipe between these views.
+// Shows tabs for graphs and logs.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun UnifiedEvidenceSection(details: AlertDetails) {
@@ -638,9 +633,7 @@ private fun UnifiedEvidenceSection(details: AlertDetails) {
     }
 }
 
-/**
- * Custom dummy chart for Alert Details "Performance" tab.
- */
+// Draws a manual chart for performance data.
 @Composable
 fun PerformanceChart(data: List<ChartDataPoint>) {
     if (data.isEmpty()) {

@@ -19,7 +19,7 @@ data class ExplorerUiState(
 )
 
 // This ViewModel manages the list of network devices.
-// It handles searching, filtering, and loading details when a user taps a device.
+// It handles searching, filtering, tagging critical assets, and loading details.
 @HiltViewModel
 class ExplorerViewModel @Inject constructor() : ViewModel() {
 
@@ -33,7 +33,7 @@ class ExplorerViewModel @Inject constructor() : ViewModel() {
     val uiState = _uiState.asStateFlow()
 
     // A list of full details for every device (used for the details screen).
-    private val fullDeviceDetailsList: List<DeviceDetails>
+    private var fullDeviceDetailsList: List<DeviceDetails>
 
     // Runs when the screen is first created.
     init {
@@ -72,17 +72,52 @@ class ExplorerViewModel @Inject constructor() : ViewModel() {
         _uiState.update { it.copy(searchQuery = query) }
     }
 
+    // New Function: Toggles the "Critical Asset" status (Star icon) for a device.
+    fun toggleDeviceCriticality(deviceId: String) {
+        val updatedList = _allDevices.value.map { device ->
+            if (device.id == deviceId) {
+                device.copy(isCritical = !device.isCritical)
+            } else {
+                device
+            }
+        }
+        _allDevices.value = updatedList
+
+        // Also update the details view if it's currently open
+        if (_uiState.value.deviceDetails?.baseInfo?.id == deviceId) {
+            val currentDetails = _uiState.value.deviceDetails
+            if (currentDetails != null) {
+                val updatedDetails = currentDetails.copy(
+                    baseInfo = currentDetails.baseInfo.copy(isCritical = !currentDetails.baseInfo.isCritical)
+                )
+                _uiState.update { it.copy(deviceDetails = updatedDetails) }
+            }
+        }
+    }
+
     // Call this to fetch details for a specific device ID (simulates a network call).
     fun loadDeviceDetails(deviceId: String) {
         viewModelScope.launch {
             // Show loading spinner.
             _uiState.update { it.copy(isLoadingDetails = true, deviceDetails = null) }
             kotlinx.coroutines.delay(500) // Fake delay.
+
+            // Find the device in our local list to ensure we get the latest "isCritical" status
+            val deviceSummary = _allDevices.value.find { it.id == deviceId }
+            val staticDetails = fullDeviceDetailsList.find { d -> d.baseInfo.id == deviceId }
+
+            // Merge the live summary state with the static details
+            val finalDetails = if (deviceSummary != null && staticDetails != null) {
+                staticDetails.copy(baseInfo = deviceSummary)
+            } else {
+                staticDetails
+            }
+
             // Update UI with the found device details.
             _uiState.update {
                 it.copy(
                     isLoadingDetails = false,
-                    deviceDetails = fullDeviceDetailsList.find { d -> d.baseInfo.id == deviceId }
+                    deviceDetails = finalDetails
                 )
             }
         }
@@ -105,7 +140,7 @@ class ExplorerViewModel @Inject constructor() : ViewModel() {
         // Returns a list of detailed devices.
         return listOf(
             DeviceDetails(
-                baseInfo = Device("1", "Primary-DB-Server", "10.0.0.50", DeviceType.SERVER, listOf("Mission-Critical", "Production", "PCI"), DeviceHealth.CRITICAL, List(20) { Random.nextFloat() }),
+                baseInfo = Device("1", "Primary-DB-Server", "10.0.0.50", DeviceType.SERVER, listOf("Mission-Critical", "Production", "PCI"), DeviceHealth.CRITICAL, List(20) { Random.nextFloat() }, isCritical = true),
                 function = "Primary Database", criticality = 10, maintenance = null, historicalData = chartData, recentActivity = recentAlerts
             ),
             DeviceDetails(

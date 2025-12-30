@@ -21,7 +21,7 @@ enum class DeviceType(val icon: ImageVector) {
 }
 
 // This holds the summary info for a single machine in the inventory list.
-// We use this to display the name, IP address, and a tiny health chart for quick scanning.
+// Updated: Added 'isCritical' to allow users to tag important assets.
 data class Device(
     val id: String,
     val name: String,
@@ -29,7 +29,8 @@ data class Device(
     val type: DeviceType,
     val tags: List<String>,
     val health: DeviceHealth,
-    val cpuTrend: List<Float> // A list of values (0.0 to 1.0) for the sparkline
+    val cpuTrend: List<Float>, // A list of values (0.0 to 1.0) for the sparkline
+    val isCritical: Boolean = false // New: Tracks if the user tagged this as a Critical Asset
 )
 
 // This holds the full profile of a machine.
