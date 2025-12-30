@@ -9,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -18,6 +17,7 @@ import com.example.ainoc.ui.theme.*
 
 /**
  * A widget to display Key Performance Indicators (e.g., Uptime, Latency).
+ * Adapts to Light and Dark themes.
  */
 @Composable
 fun KpiWidget(
@@ -31,7 +31,8 @@ fun KpiWidget(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -45,13 +46,13 @@ fun KpiWidget(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = PrimaryPurple,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelMedium,
-                    color = AccentBeige.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     maxLines = 1
                 )
             }
@@ -61,7 +62,7 @@ fun KpiWidget(
             Text(
                 text = value,
                 style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
-                color = AccentBeige,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
 

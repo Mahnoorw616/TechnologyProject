@@ -33,12 +33,14 @@ fun SplashScreen(navController: NavController) {
     val mainProgress = remember { Animatable(0f) }
     val contentAlpha = remember { Animatable(0f) }
 
-    // Dynamic gradient
+    // Dynamic gradient based on Theme
     val isDark = MaterialTheme.colorScheme.isDark
     val gradientColors = if (isDark) {
-        listOf(SplashGradientStart, SplashGradientEnd)
+        // Fix: Use correct variable names from Color.kt
+        listOf(SplashStartDark, SplashEndDark)
     } else {
-        listOf(LightSplashGradientStart, LightSplashGradientEnd)
+        // Fix: Use correct variable names from Color.kt
+        listOf(SplashStartLight, SplashEndLight)
     }
 
     // Dynamic text color

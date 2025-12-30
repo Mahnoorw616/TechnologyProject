@@ -1,6 +1,5 @@
 package com.example.ainoc.ui.screens.explorer
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,32 +50,22 @@ fun ExplorerScreen(navController: NavController, viewModel: ExplorerViewModel = 
         OutlinedTextField(
             value = uiState.searchQuery,
             onValueChange = { viewModel.onSearchQueryChanged(it) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            placeholder = { Text("Search by name, IP, or tag...", color = AccentBeige.copy(alpha = 0.7f)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = PrimaryPurple) },
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            placeholder = { Text("Search...", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)) },
+            leadingIcon = { Icon(Icons.Default.Search, "Search", tint = MaterialTheme.colorScheme.primary) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = CardBackground,
-                focusedBorderColor = PrimaryPurple,
+                containerColor = MaterialTheme.colorScheme.surface,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = Color.Transparent,
-                focusedTextColor = AccentBeige,
-                unfocusedTextColor = AccentBeige
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             )
         )
-
-        LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(uiState.filteredDevices, key = { it.id }) { device ->
-                DeviceCard(device = device, onClick = {
-                    navController.navigate("device_details/${device.id}")
-                })
-            }
+        LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(uiState.filteredDevices, key = { it.id }) { device -> DeviceCard(device) { navController.navigate("device_details/${device.id}") } }
         }
     }
 }
@@ -84,51 +73,25 @@ fun ExplorerScreen(navController: NavController, viewModel: ExplorerViewModel = 
 @Composable
 private fun DeviceCard(device: Device, onClick: () -> Unit) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { NoRippleInteractionSource() },
-                indication = null,
-                onClick = onClick
-            ),
-        colors = CardDefaults.cardColors(containerColor = CardBackground)
+        modifier = Modifier.fillMaxWidth().clickable(interactionSource = remember { NoRippleInteractionSource() }, indication = null, onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(device.type.icon, contentDescription = device.type.name, tint = PrimaryPurple, modifier = Modifier.size(40.dp))
+            Icon(device.type.icon, device.type.name, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                // FIX: Added maxLines and overflow to ensure single row title
-                Text(
-                    text = device.name,
-                    fontWeight = FontWeight.Bold,
-                    color = AccentBeige,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(device.ipAddress, color = AccentBeige.copy(alpha = 0.8f))
+                Text(device.name, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(device.ipAddress, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
                 Row(modifier = Modifier.padding(top = 4.dp)) {
                     device.tags.take(3).forEach { tag ->
-                        Text(
-                            text = tag,
-                            modifier = Modifier
-                                .border(1.dp, PrimaryPurple, RoundedCornerShape(50))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                            color = AccentBeige,
-                            fontSize = 10.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            softWrap = false
-                        )
+                        Text(tag, modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(50)).padding(horizontal = 6.dp, vertical = 2.dp), color = MaterialTheme.colorScheme.onSurface, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, softWrap = false)
                         Spacer(Modifier.width(4.dp))
                     }
                 }
             }
             Spacer(Modifier.width(16.dp))
-            SparklineChart(
-                data = device.cpuTrend,
-                health = device.health,
-                modifier = Modifier.size(width = 80.dp, height = 40.dp)
-            )
+            SparklineChart(device.cpuTrend, device.health, Modifier.size(80.dp, 40.dp))
         }
     }
 }
@@ -136,20 +99,15 @@ private fun DeviceCard(device: Device, onClick: () -> Unit) {
 @Composable
 private fun SparklineChart(data: List<Float>, health: DeviceHealth, modifier: Modifier) {
     val color = when (health) {
-        DeviceHealth.NORMAL -> AccentBeige
+        DeviceHealth.NORMAL -> MaterialTheme.colorScheme.onSurface // Use text color for normal lines in light mode
         DeviceHealth.WARNING -> WarningYellow
         DeviceHealth.CRITICAL -> CriticalRed
     }
-    Canvas(modifier = modifier) {
+    Canvas(modifier) {
         if (data.size < 2) return@Canvas
-        val path = Path()
-        val stepX = size.width / (data.size - 1)
-        data.forEachIndexed { index, value ->
-            val x = index * stepX
-            val y = size.height * (1 - value)
-            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-        drawPath(path, color = color, style = Stroke(width = 2.dp.toPx()))
+        val path = Path(); val stepX = size.width / (data.size - 1)
+        data.forEachIndexed { i, v -> val x = i * stepX; val y = size.height * (1 - v); if (i == 0) path.moveTo(x, y) else path.lineTo(x, y) }
+        drawPath(path, color, style = Stroke(width = 2.dp.toPx()))
     }
 }
 
@@ -159,133 +117,73 @@ fun DeviceDetailsScreen(deviceId: String, navController: NavController, viewMode
     val uiState by viewModel.uiState.collectAsState()
     val details = uiState.deviceDetails
     var selectedTimeRange by remember { mutableStateOf("1H") }
-
-    LaunchedEffect(deviceId) {
-        viewModel.loadDeviceDetails(deviceId)
-    }
+    LaunchedEffect(deviceId) { viewModel.loadDeviceDetails(deviceId) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(details?.baseInfo?.name ?: "Loading...", color = AccentBeige) },
-                navigationIcon = {
-                    IconButton(
-                        onClick = { navController.popBackStack() },
-                        interactionSource = remember { NoRippleInteractionSource() }
-                    ) {
-                        Icon(Icons.Default.ArrowBack, "Back", tint = AccentBeige)
-                    }
-                },
-                actions = {
-                    details?.let {
-                        Icon(
-                            Icons.Filled.Circle,
-                            contentDescription = "Status",
-                            tint = if (it.baseInfo.health != DeviceHealth.CRITICAL) HealthyGreen else CriticalRed,
-                            modifier = Modifier.padding(end = 16.dp)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                title = { Text(details?.baseInfo?.name ?: "Loading...", color = MaterialTheme.colorScheme.onBackground) },
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }, interactionSource = remember { NoRippleInteractionSource() }) { Icon(Icons.Default.ArrowBack, "Back", tint = MaterialTheme.colorScheme.onBackground) } },
+                actions = { details?.let { Icon(Icons.Filled.Circle, "Status", tint = if (it.baseInfo.health != DeviceHealth.CRITICAL) HealthyGreen else CriticalRed, modifier = Modifier.padding(end = 16.dp)) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        if (uiState.isLoadingDetails) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = PrimaryPurple)
-            }
-        } else {
-            details?.let { d ->
-                LazyColumn(
-                    modifier = Modifier.padding(paddingValues),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    item { AssetInfoCard(details = d) }
-                    item { HistoricalPerformanceCard(selectedTimeRange, onRangeSelected = { selectedTimeRange = it }) }
-                    item { RecentActivityCard(alerts = d.recentActivity, navController = navController) }
-                }
-            }
-        }
+        if (uiState.isLoadingDetails) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) } }
+        else { details?.let { d -> LazyColumn(modifier = Modifier.padding(paddingValues), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) { item { AssetInfoCard(d) }; item { HistoricalPerformanceCard(selectedTimeRange) { selectedTimeRange = it } }; item { RecentActivityCard(d.recentActivity, navController) } } } }
     }
 }
 
 @Composable
 private fun AssetInfoCard(details: DeviceDetails) {
-    Card(colors = CardDefaults.cardColors(containerColor = CardBackground)) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Asset Details", style = MaterialTheme.typography.titleLarge, color = AccentBeige)
-            Divider(color = BackgroundDark)
-            DetailRow("IP Address:", details.baseInfo.ipAddress)
-            DetailRow("Device Type:", details.baseInfo.type.name)
-            DetailRow("Function:", details.function)
-            DetailRow("Criticality:", "${details.criticality} / 10")
-            DetailRow("Maintenance:", details.maintenance ?: "None Scheduled")
+            Text("Asset Details", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+            Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            DetailRow("IP:", details.baseInfo.ipAddress); DetailRow("Type:", details.baseInfo.type.name); DetailRow("Function:", details.function); DetailRow("Criticality:", "${details.criticality}/10"); DetailRow("Maintenance:", details.maintenance ?: "None")
         }
     }
 }
 
 @Composable
 private fun DetailRow(label: String, value: String) {
-    Row {
-        Text(label, fontWeight = FontWeight.Bold, color = AccentBeige.copy(alpha = 0.7f), modifier = Modifier.width(120.dp))
-        Text(value, color = AccentBeige)
-    }
+    Row { Text(label, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), modifier = Modifier.width(120.dp)); Text(value, color = MaterialTheme.colorScheme.onSurface) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HistoricalPerformanceCard(selectedTimeRange: String, onRangeSelected: (String) -> Unit) {
     val timeRanges = listOf("1H", "6H", "24H", "7D", "Custom")
-    Card(colors = CardDefaults.cardColors(containerColor = CardBackground)) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp)) {
-            Text("Performance Explorer", style = MaterialTheme.typography.titleLarge, color = AccentBeige)
+            Text("Performance Explorer", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(16.dp))
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                timeRanges.forEachIndexed { index, label ->
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                timeRanges.forEachIndexed { i, label ->
                     SegmentedButton(
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = timeRanges.size),
+                        shape = SegmentedButtonDefaults.itemShape(i, timeRanges.size),
                         onClick = { onRangeSelected(label) },
                         selected = label == selectedTimeRange,
                         interactionSource = remember { NoRippleInteractionSource() },
-                        colors = SegmentedButtonDefaults.colors(
-                            activeContainerColor = PrimaryPurple,
-                            activeContentColor = AccentBeige,
-                            inactiveContainerColor = Color.Transparent,
-                            inactiveContentColor = AccentBeige
-                        )
-                    ) {
-                        Text(label)
-                    }
+                        colors = SegmentedButtonDefaults.colors(activeContainerColor = MaterialTheme.colorScheme.primary, activeContentColor = MaterialTheme.colorScheme.onPrimary, inactiveContainerColor = Color.Transparent, inactiveContentColor = MaterialTheme.colorScheme.onSurface)
+                    ) { Text(label) }
                 }
             }
             Spacer(Modifier.height(16.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("CPU Utilization (%) - Chart Placeholder", color = AccentBeige)
-                Text("Memory Usage (%) - Chart Placeholder", color = AccentBeige)
-                Text("Network Throughput (Mbps) - Chart Placeholder", color = AccentBeige)
-            }
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) { Text("Charts Placeholder", color = MaterialTheme.colorScheme.onSurface) }
         }
     }
 }
 
 @Composable
 private fun RecentActivityCard(alerts: List<Alert>, navController: NavController) {
-    Card(colors = CardDefaults.cardColors(containerColor = CardBackground)) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp)) {
-            Text("Recent Activity", style = MaterialTheme.typography.titleLarge, color = AccentBeige)
+            Text("Recent Activity", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(16.dp))
-            if (alerts.isEmpty()) {
-                Text("No recent alerts for this device.", color = AccentBeige.copy(alpha = 0.7f))
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    alerts.forEach { alert ->
-                        AlertCard(alert = alert, onClick = {
-                            navController.navigate(Screen.AlertDetails.createRoute(alert.id))
-                        })
-                    }
-                }
-            }
+            if (alerts.isEmpty()) Text("No alerts.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+            else Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { alerts.forEach { AlertCard(it) { navController.navigate(Screen.AlertDetails.createRoute(it.id)) } } }
         }
     }
 }

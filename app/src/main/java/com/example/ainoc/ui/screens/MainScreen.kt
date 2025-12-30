@@ -52,40 +52,25 @@ fun MainScreen(mainNavController: NavController) {
     val scope = rememberCoroutineScope()
     var showLogoutDialog by remember { mutableStateOf(false) }
 
-    // DYNAMIC GRADIENT SELECTION
+    // DYNAMIC GRADIENT
     val isDark = MaterialTheme.colorScheme.isDark
     val gradientColors = if (isDark) {
-        listOf(SplashGradientStart, SplashGradientEnd)
+        listOf(SplashStartDark, SplashEndDark)
     } else {
-        listOf(LightSplashGradientStart, LightSplashGradientEnd)
+        listOf(SplashStartLight, SplashEndLight)
     }
 
     if (showLogoutDialog) {
         AlertDialog(
             containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Log Out?", color = MaterialTheme.colorScheme.onBackground) },
-            text = { Text("Are you sure you want to log out of your session?", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)) },
+            title = { Text("Log Out?", color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("Are you sure you want to log out?", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showLogoutDialog = false
-                        mainNavController.navigate(Screen.Login.route) {
-                            popUpTo(mainNavController.graph.id) { inclusive = true }
-                        }
-                    },
-                    interactionSource = remember { NoRippleInteractionSource() }
-                ) {
-                    Text("Log Out", color = CriticalRed)
-                }
+                TextButton(onClick = { showLogoutDialog = false; mainNavController.navigate(Screen.Login.route) { popUpTo(mainNavController.graph.id) { inclusive = true } } }, interactionSource = remember { NoRippleInteractionSource() }) { Text("Log Out", color = CriticalRed) }
             },
             dismissButton = {
-                TextButton(
-                    onClick = { showLogoutDialog = false },
-                    interactionSource = remember { NoRippleInteractionSource() }
-                ) {
-                    Text("Cancel", color = MaterialTheme.colorScheme.onBackground)
-                }
+                TextButton(onClick = { showLogoutDialog = false }, interactionSource = remember { NoRippleInteractionSource() }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
             }
         )
     }
@@ -93,14 +78,7 @@ fun MainScreen(mainNavController: NavController) {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            DrawerContent(
-                contentNavController = contentNavController,
-                onCloseDrawer = { scope.launch { drawerState.close() } },
-                onLogoutClick = {
-                    scope.launch { drawerState.close() }
-                    showLogoutDialog = true
-                }
-            )
+            DrawerContent(contentNavController, { scope.launch { drawerState.close() } }, { scope.launch { drawerState.close() }; showLogoutDialog = true })
         }
     ) {
         Scaffold(
@@ -108,32 +86,20 @@ fun MainScreen(mainNavController: NavController) {
                 TopAppBar(
                     title = { Text("AI NOC", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold) },
                     navigationIcon = {
-                        IconButton(
-                            onClick = { scope.launch { drawerState.open() } },
-                            interactionSource = remember { NoRippleInteractionSource() }
-                        ) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.onBackground)
+                        IconButton(onClick = { scope.launch { drawerState.open() } }, interactionSource = remember { NoRippleInteractionSource() }) {
+                            Icon(Icons.Default.Menu, "Menu", tint = MaterialTheme.colorScheme.onBackground)
                         }
                     },
                     actions = {
-                        IconButton(
-                            onClick = {
-                                contentNavController.navigate(Screen.ProfileAndSecurity.route)
-                            },
-                            interactionSource = remember { NoRippleInteractionSource() }
-                        ) {
-                            Icon(Icons.Default.AccountCircle, contentDescription = "Account", tint = MaterialTheme.colorScheme.onBackground)
+                        IconButton(onClick = { contentNavController.navigate(Screen.ProfileAndSecurity.route) }, interactionSource = remember { NoRippleInteractionSource() }) {
+                            Icon(Icons.Default.AccountCircle, "Account", tint = MaterialTheme.colorScheme.onBackground)
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        // Make TopBar slightly transparent to let gradient show through
-                        containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.8f)
-                    )
+                    // Use a slightly transparent background to let the gradient bleed through in the status bar area
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.7f))
                 )
             },
-            bottomBar = {
-                BottomNavigationBar(navController = contentNavController)
-            }
+            bottomBar = { BottomNavigationBar(contentNavController) }
         ) { padding ->
             Box(
                 modifier = Modifier
@@ -141,10 +107,7 @@ fun MainScreen(mainNavController: NavController) {
                     .fillMaxSize()
                     .background(Brush.verticalGradient(gradientColors))
             ) {
-                MainContentNavHost(
-                    contentNavController = contentNavController,
-                    mainNavController = mainNavController
-                )
+                MainContentNavHost(contentNavController, mainNavController)
             }
         }
     }
@@ -157,7 +120,6 @@ private fun BottomNavigationBar(navController: NavController) {
         BottomNavItem("Alerts", Screen.Alerts.route, Icons.Filled.Notifications, Icons.Outlined.Notifications, true, 3),
         BottomNavItem("Explorer", Screen.Explorer.route, Icons.Filled.Explore, Icons.Outlined.Explore, false)
     )
-
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -166,20 +128,8 @@ private fun BottomNavigationBar(navController: NavController) {
             val selected = currentRoute == item.route
             NavigationBarItem(
                 selected = selected,
-                onClick = {
-                    if (!selected) {
-                        navController.navigate(item.route) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                },
-                icon = {
-                    BadgedBox(badge = { item.badgeCount?.let { Badge { Text("$it") } } }) {
-                        Icon(if (selected) item.selectedIcon else item.unselectedIcon, contentDescription = item.title)
-                    }
-                },
+                onClick = { if (!selected) navController.navigate(item.route) { popUpTo(navController.graph.startDestinationId) { saveState = true }; launchSingleTop = true; restoreState = true } },
+                icon = { BadgedBox(badge = { item.badgeCount?.let { Badge { Text("$it") } } }) { Icon(if (selected) item.selectedIcon else item.unselectedIcon, item.title) } },
                 alwaysShowLabel = false,
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.primary,
@@ -193,129 +143,53 @@ private fun BottomNavigationBar(navController: NavController) {
 }
 
 @Composable
-private fun DrawerContent(
-    contentNavController: NavController,
-    onCloseDrawer: () -> Unit,
-    onLogoutClick: () -> Unit
-) {
+private fun DrawerContent(contentNavController: NavController, onCloseDrawer: () -> Unit, onLogoutClick: () -> Unit) {
     ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.background) {
-        Column(
-            Modifier.fillMaxWidth().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Image(painterResource(R.drawable.ai_noc_logo), "Logo", Modifier.size(80.dp))
             Spacer(Modifier.height(8.dp))
             Text("Admin AI NOC", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
             Text("adminainoc@gmail.com", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
         }
+        HorizontalDivider(Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
-        HorizontalDivider(Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.surface)
+        val drawerItems = listOf("Asset Management" to Screen.Explorer.route, "Maintenance Windows" to Screen.MaintenanceWindows.route, "Reports" to Screen.Alerts.route, "AI Management" to Screen.AiManagement.route, "Settings" to Screen.Settings.route)
+        val icons = listOf(Icons.Outlined.Dns, Icons.Outlined.CalendarMonth, Icons.Outlined.BarChart, Icons.Outlined.AutoAwesome, Icons.Outlined.Settings)
 
-        val drawerItems = listOf(
-            "Asset Management" to Icons.Outlined.Dns,
-            "Maintenance Windows" to Icons.Outlined.CalendarMonth,
-            "Reports" to Icons.Outlined.BarChart,
-            "AI Management" to Icons.Outlined.AutoAwesome,
-            "Settings" to Icons.Outlined.Settings
-        )
-
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp)
-        ) {
-            items(drawerItems) { (title, icon) ->
-                val route = when (title) {
-                    "Asset Management" -> Screen.Explorer.route
-                    "Maintenance Windows" -> Screen.MaintenanceWindows.route
-                    "Reports" -> Screen.Alerts.route
-                    "AI Management" -> Screen.AiManagement.route
-                    else -> Screen.Settings.route
-                }
-
+        LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(drawerItems.size) { i ->
+                val (title, route) = drawerItems[i]
                 NavigationDrawerItem(
                     label = { Text(title) },
                     selected = false,
-                    onClick = {
-                        onCloseDrawer()
-                        contentNavController.navigate(route) {
-                            popUpTo(contentNavController.graph.startDestinationId)
-                            launchSingleTop = true
-                        }
-                    },
-                    icon = { Icon(icon, contentDescription = title, tint = MaterialTheme.colorScheme.primary) },
+                    onClick = { onCloseDrawer(); contentNavController.navigate(route) { popUpTo(contentNavController.graph.startDestinationId); launchSingleTop = true } },
+                    icon = { Icon(icons[i], title, tint = MaterialTheme.colorScheme.primary) },
                     shape = RoundedCornerShape(12.dp),
                     colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onBackground),
-                    modifier = Modifier.border(
-                        1.dp, Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), Color.Transparent)),
-                        RoundedCornerShape(12.dp)
-                    ),
+                    modifier = Modifier.border(1.dp, Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), Color.Transparent)), RoundedCornerShape(12.dp)),
                     interactionSource = remember { NoRippleInteractionSource() }
                 )
             }
         }
-
-        HorizontalDivider(Modifier.padding(12.dp), color = MaterialTheme.colorScheme.surface)
-
-        NavigationDrawerItem(
-            label = { Text("Logout") },
-            selected = false,
-            onClick = onLogoutClick,
-            icon = { Icon(Icons.Outlined.Logout, "Logout", tint = MaterialTheme.colorScheme.primary) },
-            colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onBackground),
-            interactionSource = remember { NoRippleInteractionSource() }
-        )
+        HorizontalDivider(Modifier.padding(12.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+        NavigationDrawerItem(label = { Text("Logout") }, selected = false, onClick = onLogoutClick, icon = { Icon(Icons.Outlined.Logout, "Logout", tint = MaterialTheme.colorScheme.primary) }, colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onBackground), interactionSource = remember { NoRippleInteractionSource() })
     }
 }
 
-// ... MainContentNavHost remains same
 @Composable
-private fun MainContentNavHost(
-    contentNavController: NavHostController,
-    mainNavController: NavController
-) {
-    NavHost(
-        navController = contentNavController,
-        startDestination = Screen.Dashboard.route,
-        enterTransition = { fadeIn(tween(300)) },
-        exitTransition = { fadeOut(tween(300)) }
-    ) {
-        val slideSpec = tween<IntOffset>(350)
-
+private fun MainContentNavHost(contentNavController: NavHostController, mainNavController: NavController) {
+    NavHost(navController = contentNavController, startDestination = Screen.Dashboard.route, enterTransition = { fadeIn(tween(300)) }, exitTransition = { fadeOut(tween(300)) }) {
         composable(Screen.Dashboard.route) { DashboardScreen() }
         composable(Screen.Alerts.route) { AlertsListScreen(contentNavController) }
         composable(Screen.Explorer.route) { ExplorerScreen(contentNavController) }
-
-        composable(Screen.Settings.route) {
-            SettingsScreen(
-                contentNavController = contentNavController,
-                mainNavController = mainNavController
-            )
-        }
-
+        composable(Screen.Settings.route) { SettingsScreen(contentNavController, mainNavController) }
         composable(Screen.ProfileAndSecurity.route) { ProfileAndSecurityScreen(contentNavController) }
         composable(Screen.ThemeSettings.route) { ThemeSettingsScreen(contentNavController) }
         composable(Screen.NotificationSettings.route) { NotificationSettingsScreen(contentNavController) }
         composable(Screen.AiManagement.route) { AiManagementScreen(contentNavController) }
         composable(Screen.MaintenanceWindows.route) { MaintenanceWindowsScreen(contentNavController) }
         composable(Screen.About.route) { AboutScreen(contentNavController) }
-
-        composable(
-            Screen.AlertDetails.route,
-            enterTransition = { slideInHorizontally(slideSpec) { it } },
-            exitTransition = { slideOutHorizontally(slideSpec) { -it } }
-        ) { backStackEntry ->
-            val alertId = backStackEntry.arguments?.getString("alertId") ?: "N/A"
-            AlertDetailsScreen(alertId, contentNavController)
-        }
-
-        composable(
-            "device_details/{deviceId}",
-            enterTransition = { slideInHorizontally(slideSpec) { it } },
-            exitTransition = { slideOutHorizontally(slideSpec) { -it } }
-        ) { backStackEntry ->
-            val deviceId = backStackEntry.arguments?.getString("deviceId") ?: "N/A"
-            DeviceDetailsScreen(deviceId, contentNavController)
-        }
+        composable(Screen.AlertDetails.route, enterTransition = { slideInHorizontally(tween(350)) { it } }, exitTransition = { slideOutHorizontally(tween(350)) { -it } }) { AlertDetailsScreen(it.arguments?.getString("alertId") ?: "", contentNavController) }
+        composable("device_details/{deviceId}", enterTransition = { slideInHorizontally(tween(350)) { it } }, exitTransition = { slideOutHorizontally(tween(350)) { -it } }) { DeviceDetailsScreen(it.arguments?.getString("deviceId") ?: "", contentNavController) }
     }
 }

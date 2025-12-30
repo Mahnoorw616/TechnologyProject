@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -80,7 +79,8 @@ fun AlertsListScreen(navController: NavController, viewModel: AlertsViewModel = 
                     onFilterClick = { viewModel.showAdvancedFilter() }
                 )
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
             // Smart Filters Row
@@ -98,13 +98,18 @@ fun AlertsListScreen(navController: NavController, viewModel: AlertsViewModel = 
                         onClick = { viewModel.onSmartFilterClicked(filter) },
                         label = { Text(filter) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = PrimaryPurple,
-                            containerColor = CardBackground,
-                            selectedLabelColor = AccentBeige,
-                            labelColor = AccentBeige
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            labelColor = MaterialTheme.colorScheme.onSurface
                         ),
                         interactionSource = remember { NoRippleInteractionSource() },
-                        border = null
+                        // FIX: Explicitly passed 'enabled' and 'selected' parameters
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                        )
                     )
                 }
             }
@@ -128,22 +133,22 @@ fun AlertsListScreen(navController: NavController, viewModel: AlertsViewModel = 
 @Composable
 private fun DefaultAppBar(onSearchClick: () -> Unit, onFilterClick: () -> Unit) {
     TopAppBar(
-        title = { Text("Alerts", color = AccentBeige, fontWeight = FontWeight.Bold) },
+        title = { Text("Alerts", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold) },
         actions = {
             IconButton(
                 onClick = onSearchClick,
                 interactionSource = remember { NoRippleInteractionSource() }
             ) {
-                Icon(Icons.Default.Search, "Search", tint = AccentBeige)
+                Icon(Icons.Default.Search, "Search", tint = MaterialTheme.colorScheme.onBackground)
             }
             IconButton(
                 onClick = onFilterClick,
                 interactionSource = remember { NoRippleInteractionSource() }
             ) {
-                Icon(Icons.Default.FilterList, "Filter", tint = AccentBeige)
+                Icon(Icons.Default.FilterList, "Filter", tint = MaterialTheme.colorScheme.onBackground)
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
     )
 }
 
@@ -157,14 +162,14 @@ private fun SearchAppBar(query: String, onQueryChange: (String) -> Unit, onClose
                 value = query,
                 onValueChange = onQueryChange,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search...", color = AccentBeige.copy(alpha = 0.7f)) },
+                placeholder = { Text("Search...", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 singleLine = true,
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = AccentBeige,
-                    unfocusedTextColor = AccentBeige,
-                    cursorColor = PrimaryPurple,
+                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    cursorColor = MaterialTheme.colorScheme.primary,
                     focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
                     containerColor = Color.Transparent
@@ -172,7 +177,7 @@ private fun SearchAppBar(query: String, onQueryChange: (String) -> Unit, onClose
             )
         },
         navigationIcon = {
-            Icon(Icons.Default.Search, "Search", tint = AccentBeige, modifier = Modifier.padding(start = 16.dp))
+            Icon(Icons.Default.Search, "Search", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(start = 16.dp))
         },
         actions = {
             IconButton(
@@ -184,10 +189,10 @@ private fun SearchAppBar(query: String, onQueryChange: (String) -> Unit, onClose
                 },
                 interactionSource = remember { NoRippleInteractionSource() }
             ) {
-                Icon(Icons.Default.Close, "Close Search", tint = AccentBeige)
+                Icon(Icons.Default.Close, "Close", tint = MaterialTheme.colorScheme.onBackground)
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
     )
 }
 
@@ -202,7 +207,8 @@ fun AlertCard(alert: Alert, onClick: () -> Unit) {
                 onClick = onClick
             ),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
             // Priority Strip
@@ -224,7 +230,7 @@ fun AlertCard(alert: Alert, onClick: () -> Unit) {
                     Text(
                         alert.title,
                         fontWeight = FontWeight.Bold,
-                        color = AccentBeige,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -233,13 +239,13 @@ fun AlertCard(alert: Alert, onClick: () -> Unit) {
                     Text(
                         "Target: ${alert.device}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = AccentBeige.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
                         alert.timestamp,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                 }
                 Spacer(Modifier.width(8.dp))
@@ -252,10 +258,10 @@ fun AlertCard(alert: Alert, onClick: () -> Unit) {
 @Composable
 private fun StatusTag(status: AlertStatus, modifier: Modifier = Modifier) {
     val (color, textColor) = when (status) {
-        AlertStatus.NEW -> PrimaryPurple to AccentBeige
-        AlertStatus.ACKNOWLEDGED -> Color.Gray to AccentBeige
-        AlertStatus.RESOLVED -> HealthyGreen to BackgroundDark
-        else -> CardBackground to AccentBeige
+        AlertStatus.NEW -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+        AlertStatus.ACKNOWLEDGED -> Color.Gray to Color.White
+        AlertStatus.RESOLVED -> HealthyGreen to Color.White
+        else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurface
     }
     Box(
         modifier = modifier
@@ -290,13 +296,13 @@ private fun AdvancedFilterModal(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 TopAppBar(
-                    title = { Text("Advanced Filters", color = AccentBeige) },
+                    title = { Text("Advanced Filters", color = MaterialTheme.colorScheme.onBackground) },
                     navigationIcon = {
                         IconButton(
                             onClick = onDismiss,
                             interactionSource = remember { NoRippleInteractionSource() }
                         ) {
-                            Icon(Icons.Default.Close, "Close", tint = AccentBeige)
+                            Icon(Icons.Default.Close, "Close", tint = MaterialTheme.colorScheme.onBackground)
                         }
                     },
                     actions = {
@@ -304,10 +310,10 @@ private fun AdvancedFilterModal(
                             onClick = onReset,
                             interactionSource = remember { NoRippleInteractionSource() }
                         ) {
-                            Text("Reset", color = PrimaryPurple)
+                            Text("Reset", color = MaterialTheme.colorScheme.primary)
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
                 )
             },
             bottomBar = {
@@ -316,20 +322,20 @@ private fun AdvancedFilterModal(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     interactionSource = remember { NoRippleInteractionSource() }
                 ) {
-                    Text("Apply Filters", color = AccentBeige)
+                    Text("Apply Filters", color = MaterialTheme.colorScheme.onPrimary)
                 }
             },
-            containerColor = BackgroundDark
+            containerColor = MaterialTheme.colorScheme.background
         ) { padding ->
             LazyColumn(
                 modifier = Modifier.padding(padding),
                 contentPadding = PaddingValues(16.dp)
             ) {
                 item {
-                    Text("Priority", style = MaterialTheme.typography.titleMedium, color = AccentBeige)
+                    Text("Priority", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
                     Spacer(Modifier.height(8.dp))
                     AlertPriority.values().forEach { priority ->
                         FilterCheckboxRow(
@@ -341,7 +347,7 @@ private fun AdvancedFilterModal(
                 }
                 item { Spacer(Modifier.height(24.dp)) }
                 item {
-                    Text("Status", style = MaterialTheme.typography.titleMedium, color = AccentBeige)
+                    Text("Status", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
                     Spacer(Modifier.height(8.dp))
                     AlertStatus.values().forEach { status ->
                         FilterCheckboxRow(
@@ -372,14 +378,14 @@ private fun FilterCheckboxRow(text: String, checked: Boolean, onCheckedChange: (
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = CheckboxDefaults.colors(
-                checkedColor = PrimaryPurple,
-                uncheckedColor = AccentBeige.copy(alpha = 0.6f),
-                checkmarkColor = AccentBeige
+                checkedColor = MaterialTheme.colorScheme.primary,
+                uncheckedColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                checkmarkColor = MaterialTheme.colorScheme.onPrimary
             ),
             interactionSource = remember { NoRippleInteractionSource() }
         )
         Spacer(Modifier.width(8.dp))
-        Text(text, color = AccentBeige)
+        Text(text, color = MaterialTheme.colorScheme.onBackground)
     }
 }
 
@@ -397,13 +403,13 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(details?.baseInfo?.title ?: "Alert Details", color = AccentBeige, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                title = { Text(details?.baseInfo?.title ?: "Alert Details", color = MaterialTheme.colorScheme.onBackground, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(
                         onClick = { navController.popBackStack() },
                         interactionSource = remember { NoRippleInteractionSource() }
                     ) {
-                        Icon(Icons.Default.ArrowBack, "Back", tint = AccentBeige)
+                        Icon(Icons.Default.ArrowBack, "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
                 actions = {
@@ -418,10 +424,11 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                             )
                             DropdownMenu(
                                 expanded = statusDropdownExpanded,
-                                onDismissRequest = { statusDropdownExpanded = false }
+                                onDismissRequest = { statusDropdownExpanded = false },
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Acknowledge", color = AccentBeige) },
+                                    text = { Text("Acknowledge", color = MaterialTheme.colorScheme.onSurface) },
                                     onClick = {
                                         viewModel.updateAlertStatus(AlertStatus.ACKNOWLEDGED)
                                         statusDropdownExpanded = false
@@ -429,7 +436,7 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                                     interactionSource = remember { NoRippleInteractionSource() }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Resolve", color = AccentBeige) },
+                                    text = { Text("Resolve", color = MaterialTheme.colorScheme.onSurface) },
                                     onClick = {
                                         viewModel.updateAlertStatus(AlertStatus.RESOLVED)
                                         statusDropdownExpanded = false
@@ -441,9 +448,10 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                         Spacer(Modifier.width(16.dp))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         details?.let { d ->
             LazyColumn(
@@ -455,10 +463,13 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
             ) {
                 // Info Card
                 item {
-                    Card(colors = CardDefaults.cardColors(containerColor = CardBackground)) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Affected Asset: ${d.baseInfo.device} (IP: ${d.affectedAssetIp})", color = AccentBeige)
-                            Text("Alert Time: ${d.alertTime}", color = AccentBeige)
+                            Text("Affected Asset: ${d.baseInfo.device} (IP: ${d.affectedAssetIp})", color = MaterialTheme.colorScheme.onSurface)
+                            Text("Alert Time: ${d.alertTime}", color = MaterialTheme.colorScheme.onSurface)
                             Text("Fusion Engine Score: ${d.fusionScore} (Critical)", color = CriticalRed, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(16.dp))
 
@@ -467,22 +478,22 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                                 Button(
                                     onClick = {},
                                     modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                     contentPadding = PaddingValues(horizontal = 4.dp),
                                     shape = RoundedCornerShape(8.dp),
                                     interactionSource = remember { NoRippleInteractionSource() }
                                 ) {
-                                    Text("Assign", color = AccentBeige, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium)
+                                    Text("Assign", color = MaterialTheme.colorScheme.onPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium)
                                 }
                                 Button(
                                     onClick = { viewModel.updateAlertStatus(AlertStatus.ACKNOWLEDGED) },
                                     modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                     contentPadding = PaddingValues(horizontal = 4.dp),
                                     shape = RoundedCornerShape(8.dp),
                                     interactionSource = remember { NoRippleInteractionSource() }
                                 ) {
-                                    Text("Acknowledge", color = AccentBeige, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium)
+                                    Text("Acknowledge", color = MaterialTheme.colorScheme.onPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium)
                                 }
                                 Button(
                                     onClick = {},
@@ -492,7 +503,7 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                                     shape = RoundedCornerShape(8.dp),
                                     interactionSource = remember { NoRippleInteractionSource() }
                                 ) {
-                                    Text("False Positive", color = BackgroundDark, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium)
+                                    Text("False Positive", color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium)
                                 }
                             }
                         }
@@ -500,8 +511,8 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                 }
 
                 item {
-                    EvidenceCard("AI Insight", { Icon(Icons.Default.Lightbulb, null, tint = PrimaryPurple) }) {
-                        Text(d.aiInsight, color = AccentBeige)
+                    EvidenceCard("AI Insight", { Icon(Icons.Default.Lightbulb, null, tint = MaterialTheme.colorScheme.primary) }) {
+                        Text(d.aiInsight, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
 
@@ -510,10 +521,10 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                 }
 
                 item {
-                    EvidenceCard("Recommended Response Plan", { Icon(Icons.Default.Checklist, null, tint = PrimaryPurple) }) {
+                    EvidenceCard("Recommended Response Plan", { Icon(Icons.Default.Checklist, null, tint = MaterialTheme.colorScheme.primary) }) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             d.recommendedActions.forEachIndexed { index, action ->
-                                Text("${index + 1}. $action", color = AccentBeige)
+                                Text("${index + 1}. $action", color = MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }
@@ -521,12 +532,12 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
 
                 item {
                     Column {
-                        Text("Activity & Comments", style = MaterialTheme.typography.titleMedium, color = AccentBeige)
+                        Text("Activity & Comments", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
                         Spacer(Modifier.height(16.dp))
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             d.activityLog.forEach { logItem ->
                                 when (logItem) {
-                                    is ActivityLogItem.Event -> Text("${logItem.timestamp} - ${logItem.description}", color = AccentBeige.copy(alpha = 0.7f))
+                                    is ActivityLogItem.Event -> Text("${logItem.timestamp} - ${logItem.description}", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
                                     is ActivityLogItem.Comment -> CommentItem(comment = Comment(logItem.author, logItem.timestamp, logItem.text))
                                 }
                             }
@@ -535,7 +546,7 @@ fun AlertDetailsScreen(alertId: String, navController: NavController, viewModel:
                 }
             }
         } ?: Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = PrimaryPurple)
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -558,12 +569,12 @@ private fun UnifiedEvidenceSection(details: AlertDetails) {
     Column {
         TabRow(
             selectedTabIndex = pagerState.currentPage,
-            containerColor = BackgroundDark,
-            contentColor = PrimaryPurple,
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.primary,
             indicator = { tabPositions ->
                 TabRowDefaults.Indicator(
                     Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                    color = PrimaryPurple
+                    color = MaterialTheme.colorScheme.primary
                 )
             },
             divider = {}
@@ -574,28 +585,28 @@ private fun UnifiedEvidenceSection(details: AlertDetails) {
                     onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                     // FIX: Ensure text stays on one line
                     text = { Text(title, maxLines = 1, overflow = TextOverflow.Visible, softWrap = false) },
-                    selectedContentColor = PrimaryPurple,
-                    unselectedContentColor = AccentBeige.copy(alpha = 0.7f),
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     interactionSource = remember { NoRippleInteractionSource() }
                 )
             }
         }
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth().height(200.dp) // Height increased for chart
+            modifier = Modifier.fillMaxWidth().height(200.dp)
         ) { page ->
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(CardBackground)
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
                 when (tabs.getOrNull(page)) {
                     "Performance" -> PerformanceChart(data = details.performanceData)
-                    "Logs" -> Text(details.logEvidence.joinToString("\n"), color = AccentBeige)
+                    "Logs" -> Text(details.logEvidence.joinToString("\n"), color = MaterialTheme.colorScheme.onSurface)
                     "Threat Intel" -> details.threatIntel?.let {
-                        Text("IP: ${it.ipAddress}\nReputation: ${it.threatReputation}", color = AccentBeige)
+                        Text("IP: ${it.ipAddress}\nReputation: ${it.threatReputation}", color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
@@ -609,12 +620,12 @@ private fun UnifiedEvidenceSection(details: AlertDetails) {
 @Composable
 fun PerformanceChart(data: List<ChartDataPoint>) {
     if (data.isEmpty()) {
-        Text("No Data", color = AccentBeige)
+        Text("No Data", color = MaterialTheme.colorScheme.onSurface)
         return
     }
 
-    val lineColor = PrimaryPurple
-    val gridColor = Color.Gray.copy(alpha = 0.3f)
+    val lineColor = MaterialTheme.colorScheme.primary
+    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
 
     Canvas(modifier = Modifier.fillMaxSize().padding(8.dp)) {
         val width = size.width

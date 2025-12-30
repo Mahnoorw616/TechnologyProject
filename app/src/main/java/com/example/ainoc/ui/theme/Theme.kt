@@ -19,33 +19,34 @@ enum class ThemeSetting(val title: String) {
     DARK("Dark")
 }
 
+// Dark Theme: Dark BG, Beige Text
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryPurple,
-    onPrimary = AccentBeige,
-    secondary = AccentBeige.copy(alpha = 0.7f),
+    primary = PrimaryPurpleDark,
+    onPrimary = TextBeige,
+    secondary = TextBeige.copy(alpha = 0.7f),
     background = BackgroundDark,
-    onBackground = AccentBeige,
-    surface = CardBackground,
-    onSurface = AccentBeige,
-    error = CriticalRed,
-    onError = Color.White
-)
-
-// Attractive, user-friendly Light Theme
-private val LightColorScheme = lightColorScheme(
-    primary = PrimaryPurple, // Use the stronger purple for readability/branding
-    onPrimary = Color.White,
-    secondary = ThistlePurple,
-    background = FloralWhite,
-    onBackground = DeepCharcoal,
-    surface = LightSurface,
-    onSurface = DeepCharcoal,
+    onBackground = TextBeige,
+    surface = SurfaceDark,
+    onSurface = TextBeige,
     error = CriticalRed,
     onError = Color.White,
-    outline = LightGreyBorder
+    outline = Color.Gray
 )
 
-// Helper to detect if the current scheme is dark (based on background color)
+// Light Theme: Beige BG, Grey/Purple Text
+private val LightColorScheme = lightColorScheme(
+    primary = PrimaryPurpleLight,
+    onPrimary = Color.White,
+    secondary = PrimaryPurpleLight.copy(alpha = 0.8f),
+    background = BackgroundLight,
+    onBackground = TextCharcoal,
+    surface = SurfaceLight,
+    onSurface = TextCharcoal,
+    error = CriticalRed,
+    onError = Color.White,
+    outline = BorderLight
+)
+
 val ColorScheme.isDark: Boolean
     get() = this.background == BackgroundDark
 

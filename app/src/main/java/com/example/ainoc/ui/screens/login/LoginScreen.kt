@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -42,9 +43,11 @@ fun LoginScreen(
     // THEME-AWARE GRADIENT
     val isDark = MaterialTheme.colorScheme.isDark
     val gradientColors = if (isDark) {
-        listOf(SplashGradientStart, SplashGradientEnd)
+        // Fix: Use correct variable names from Color.kt
+        listOf(SplashStartDark, SplashEndDark)
     } else {
-        listOf(LightSplashGradientStart, LightSplashGradientEnd)
+        // Fix: Use correct variable names from Color.kt
+        listOf(SplashStartLight, SplashEndLight)
     }
 
     LaunchedEffect(loginResource) {
@@ -70,7 +73,8 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(gradientColors))
+                // Fix: explicit assignment to 'colors' parameter to avoid ambiguity
+                .background(Brush.verticalGradient(colors = gradientColors))
                 .padding(paddingValues)
                 .padding(32.dp)
                 .verticalScroll(rememberScrollState()),
@@ -98,9 +102,23 @@ fun LoginScreen(
                 unfocusedTrailingIconColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
 
-            OutlinedTextField(value = uiState.serverUrl, onValueChange = viewModel::onServerUrlChange, label = { Text("Server URL") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = textFieldColors)
+            OutlinedTextField(
+                value = uiState.serverUrl,
+                onValueChange = viewModel::onServerUrlChange,
+                label = { Text("Server URL") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = textFieldColors
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(value = uiState.username, onValueChange = viewModel::onUsernameChange, label = { Text("Username / Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = textFieldColors)
+            OutlinedTextField(
+                value = uiState.username,
+                onValueChange = viewModel::onUsernameChange,
+                label = { Text("Username / Email") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = textFieldColors
+            )
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
                 value = uiState.password,

@@ -3,6 +3,7 @@ package com.example.ainoc.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -14,9 +15,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-// Correct imports for the theme colors
-import com.example.ainoc.ui.theme.ProgressBarColor
-import com.example.ainoc.ui.theme.ProgressBarGlow
 
 @Composable
 fun GlowingProgressBar(
@@ -27,6 +25,11 @@ fun GlowingProgressBar(
 ) {
     val glowRadiusPx = with(LocalDensity.current) { glowRadius.toPx() }
 
+    // Use Theme Colors for Light/Dark mode compatibility
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val glowColor = primaryColor.copy(alpha = 0.6f)
+    val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f) // Subtle grey track
+
     Canvas(
         modifier = modifier
             .fillMaxWidth()
@@ -35,9 +38,9 @@ fun GlowingProgressBar(
         val cornerRadius = CornerRadius(size.height / 2, size.height / 2)
         val progressWidth = size.width * progress
 
-        // Draw the grey background track
+        // Draw the background track
         drawRoundRect(
-            color = Color.Gray.copy(alpha = 0.3f),
+            color = trackColor,
             topLeft = Offset(0f, glowRadiusPx / 2),
             size = Size(size.width, size.height - glowRadiusPx),
             cornerRadius = cornerRadius
@@ -49,12 +52,13 @@ fun GlowingProgressBar(
                 width = progressWidth,
                 height = size.height,
                 glowRadius = glowRadiusPx,
-                cornerRadius = cornerRadius
+                cornerRadius = cornerRadius,
+                glowColor = glowColor
             )
 
             // Draw the solid progress bar on top
             drawRoundRect(
-                color = ProgressBarColor,
+                color = primaryColor,
                 topLeft = Offset(0f, glowRadiusPx / 2),
                 size = Size(progressWidth, size.height - glowRadiusPx),
                 cornerRadius = cornerRadius
@@ -63,9 +67,15 @@ fun GlowingProgressBar(
     }
 }
 
-private fun DrawScope.drawGlow(width: Float, height: Float, glowRadius: Float, cornerRadius: CornerRadius) {
+private fun DrawScope.drawGlow(
+    width: Float,
+    height: Float,
+    glowRadius: Float,
+    cornerRadius: CornerRadius,
+    glowColor: Color
+) {
     val glowBrush = Brush.radialGradient(
-        colors = listOf(ProgressBarGlow, Color.Transparent),
+        colors = listOf(glowColor, Color.Transparent),
         center = Offset(width / 2, height / 2),
         radius = glowRadius
     )
