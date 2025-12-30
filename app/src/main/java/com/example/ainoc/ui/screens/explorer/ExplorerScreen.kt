@@ -5,7 +5,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,6 +26,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -83,12 +83,9 @@ fun ExplorerScreen(navController: NavController, viewModel: ExplorerViewModel = 
 
 @Composable
 private fun DeviceCard(device: Device, onClick: () -> Unit) {
-    val scale by animateFloatAsState(targetValue = 1f, label = "scale")
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .scale(scale)
             .clickable(
                 interactionSource = remember { NoRippleInteractionSource() },
                 indication = null,
@@ -100,7 +97,14 @@ private fun DeviceCard(device: Device, onClick: () -> Unit) {
             Icon(device.type.icon, contentDescription = device.type.name, tint = PrimaryPurple, modifier = Modifier.size(40.dp))
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text(device.name, fontWeight = FontWeight.Bold, color = AccentBeige)
+                // FIX: Added maxLines and overflow to ensure single row title
+                Text(
+                    text = device.name,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentBeige,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Text(device.ipAddress, color = AccentBeige.copy(alpha = 0.8f))
                 Row(modifier = Modifier.padding(top = 4.dp)) {
                     device.tags.take(3).forEach { tag ->
@@ -110,7 +114,10 @@ private fun DeviceCard(device: Device, onClick: () -> Unit) {
                                 .border(1.dp, PrimaryPurple, RoundedCornerShape(50))
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                             color = AccentBeige,
-                            fontSize = 10.sp
+                            fontSize = 10.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            softWrap = false
                         )
                         Spacer(Modifier.width(4.dp))
                     }
@@ -162,7 +169,10 @@ fun DeviceDetailsScreen(deviceId: String, navController: NavController, viewMode
             TopAppBar(
                 title = { Text(details?.baseInfo?.name ?: "Loading...", color = AccentBeige) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        interactionSource = remember { NoRippleInteractionSource() }
+                    ) {
                         Icon(Icons.Default.ArrowBack, "Back", tint = AccentBeige)
                     }
                 },
@@ -237,7 +247,13 @@ private fun HistoricalPerformanceCard(selectedTimeRange: String, onRangeSelected
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = timeRanges.size),
                         onClick = { onRangeSelected(label) },
                         selected = label == selectedTimeRange,
-                        interactionSource = remember { NoRippleInteractionSource() }
+                        interactionSource = remember { NoRippleInteractionSource() },
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = PrimaryPurple,
+                            activeContentColor = AccentBeige,
+                            inactiveContainerColor = Color.Transparent,
+                            inactiveContentColor = AccentBeige
+                        )
                     ) {
                         Text(label)
                     }

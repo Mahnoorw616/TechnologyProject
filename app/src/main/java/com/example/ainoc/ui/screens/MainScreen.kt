@@ -52,13 +52,20 @@ fun MainScreen(mainNavController: NavController) {
     val scope = rememberCoroutineScope()
     var showLogoutDialog by remember { mutableStateOf(false) }
 
-    // ---- LOGOUT DIALOG ----
+    // DYNAMIC GRADIENT SELECTION
+    val isDark = MaterialTheme.colorScheme.isDark
+    val gradientColors = if (isDark) {
+        listOf(SplashGradientStart, SplashGradientEnd)
+    } else {
+        listOf(LightSplashGradientStart, LightSplashGradientEnd)
+    }
+
     if (showLogoutDialog) {
         AlertDialog(
-            containerColor = CardBackground,
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Log Out?", color = AccentBeige) },
-            text = { Text("Are you sure you want to log out of your session?", color = AccentBeige.copy(alpha = 0.8f)) },
+            title = { Text("Log Out?", color = MaterialTheme.colorScheme.onBackground) },
+            text = { Text("Are you sure you want to log out of your session?", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -73,8 +80,11 @@ fun MainScreen(mainNavController: NavController) {
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Cancel", color = AccentBeige)
+                TextButton(
+                    onClick = { showLogoutDialog = false },
+                    interactionSource = remember { NoRippleInteractionSource() }
+                ) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onBackground)
                 }
             }
         )
@@ -96,22 +106,28 @@ fun MainScreen(mainNavController: NavController) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("AI NOC", color = AccentBeige, fontWeight = FontWeight.Bold) },
+                    title = { Text("AI NOC", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold) },
                     navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = AccentBeige)
+                        IconButton(
+                            onClick = { scope.launch { drawerState.open() } },
+                            interactionSource = remember { NoRippleInteractionSource() }
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.onBackground)
                         }
                     },
                     actions = {
-                        IconButton(onClick = {
-                            // Navigate to profile via content controller
-                            contentNavController.navigate(Screen.ProfileAndSecurity.route)
-                        }) {
-                            Icon(Icons.Default.AccountCircle, contentDescription = "Account", tint = AccentBeige)
+                        IconButton(
+                            onClick = {
+                                contentNavController.navigate(Screen.ProfileAndSecurity.route)
+                            },
+                            interactionSource = remember { NoRippleInteractionSource() }
+                        ) {
+                            Icon(Icons.Default.AccountCircle, contentDescription = "Account", tint = MaterialTheme.colorScheme.onBackground)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = BackgroundDark.copy(alpha = 0.95f)
+                        // Make TopBar slightly transparent to let gradient show through
+                        containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.8f)
                     )
                 )
             },
@@ -123,7 +139,7 @@ fun MainScreen(mainNavController: NavController) {
                 modifier = Modifier
                     .padding(padding)
                     .fillMaxSize()
-                    .background(Brush.verticalGradient(listOf(SplashGradientStart, SplashGradientEnd)))
+                    .background(Brush.verticalGradient(gradientColors))
             ) {
                 MainContentNavHost(
                     contentNavController = contentNavController,
@@ -145,7 +161,7 @@ private fun BottomNavigationBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    NavigationBar(containerColor = CardBackground) {
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
         items.forEach { item ->
             val selected = currentRoute == item.route
             NavigationBarItem(
@@ -166,8 +182,8 @@ private fun BottomNavigationBar(navController: NavController) {
                 },
                 alwaysShowLabel = false,
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = PrimaryPurple,
-                    unselectedIconColor = AccentBeige.copy(alpha = 0.6f),
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     indicatorColor = Color.Transparent
                 ),
                 interactionSource = remember { NoRippleInteractionSource() }
@@ -182,18 +198,18 @@ private fun DrawerContent(
     onCloseDrawer: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
-    ModalDrawerSheet(drawerContainerColor = BackgroundDark) {
+    ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.background) {
         Column(
             Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(painterResource(R.drawable.ai_noc_logo), "Logo", Modifier.size(80.dp))
             Spacer(Modifier.height(8.dp))
-            Text("Admin AI NOC", fontWeight = FontWeight.Bold, color = AccentBeige)
-            Text("adminainoc@gmail.com", color = PrimaryPurple, fontSize = 14.sp)
+            Text("Admin AI NOC", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+            Text("adminainoc@gmail.com", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
         }
 
-        HorizontalDivider(Modifier.padding(vertical = 16.dp), color = CardBackground)
+        HorizontalDivider(Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.surface)
 
         val drawerItems = listOf(
             "Asset Management" to Icons.Outlined.Dns,
@@ -227,11 +243,11 @@ private fun DrawerContent(
                             launchSingleTop = true
                         }
                     },
-                    icon = { Icon(icon, contentDescription = title, tint = PrimaryPurple) },
+                    icon = { Icon(icon, contentDescription = title, tint = MaterialTheme.colorScheme.primary) },
                     shape = RoundedCornerShape(12.dp),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = AccentBeige),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onBackground),
                     modifier = Modifier.border(
-                        1.dp, Brush.verticalGradient(listOf(PrimaryPurple.copy(alpha = 0.3f), Color.Transparent)),
+                        1.dp, Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), Color.Transparent)),
                         RoundedCornerShape(12.dp)
                     ),
                     interactionSource = remember { NoRippleInteractionSource() }
@@ -239,19 +255,20 @@ private fun DrawerContent(
             }
         }
 
-        HorizontalDivider(Modifier.padding(12.dp), color = CardBackground)
+        HorizontalDivider(Modifier.padding(12.dp), color = MaterialTheme.colorScheme.surface)
 
         NavigationDrawerItem(
             label = { Text("Logout") },
             selected = false,
             onClick = onLogoutClick,
-            icon = { Icon(Icons.Outlined.Logout, "Logout", tint = PrimaryPurple) },
-            colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = AccentBeige),
+            icon = { Icon(Icons.Outlined.Logout, "Logout", tint = MaterialTheme.colorScheme.primary) },
+            colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onBackground),
             interactionSource = remember { NoRippleInteractionSource() }
         )
     }
 }
 
+// ... MainContentNavHost remains same
 @Composable
 private fun MainContentNavHost(
     contentNavController: NavHostController,
@@ -269,7 +286,6 @@ private fun MainContentNavHost(
         composable(Screen.Alerts.route) { AlertsListScreen(contentNavController) }
         composable(Screen.Explorer.route) { ExplorerScreen(contentNavController) }
 
-        // FIX: Pass BOTH nav controllers to Settings
         composable(Screen.Settings.route) {
             SettingsScreen(
                 contentNavController = contentNavController,

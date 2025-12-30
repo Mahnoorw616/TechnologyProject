@@ -25,9 +25,9 @@ import androidx.navigation.NavController
 import com.example.ainoc.R
 import com.example.ainoc.ui.navigation.Screen
 import com.example.ainoc.ui.theme.*
+import com.example.ainoc.ui.theme.ThemeSetting // <--- CORRECTED IMPORT
 import com.example.ainoc.util.NoRippleInteractionSource
 import com.example.ainoc.viewmodel.SettingsViewModel
-import com.example.ainoc.viewmodel.ThemeSetting
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,15 +39,14 @@ fun SettingsScreen(
 
     if (showLogoutDialog) {
         AlertDialog(
-            containerColor = CardBackground,
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Log Out?", color = AccentBeige) },
-            text = { Text("Are you sure you want to log out of your session?", color = AccentBeige.copy(alpha = 0.8f)) },
+            title = { Text("Log Out?", color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("Are you sure you want to log out of your session?", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showLogoutDialog = false
-                        // Use mainNavController to go back to Login (Root Graph)
                         mainNavController.navigate(Screen.Login.route) {
                             popUpTo(0) { inclusive = true }
                         }
@@ -58,8 +57,11 @@ fun SettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Cancel", color = AccentBeige)
+                TextButton(
+                    onClick = { showLogoutDialog = false },
+                    interactionSource = remember { NoRippleInteractionSource() }
+                ) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         )
@@ -80,30 +82,30 @@ fun SettingsScreen(
                         indication = null,
                         onClick = { contentNavController.navigate(Screen.ProfileAndSecurity.route) }
                     ),
-                colors = CardDefaults.cardColors(containerColor = CardBackground)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(PrimaryPurple),
+                            .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("AA", color = AccentBeige, fontWeight = FontWeight.Bold)
+                        Text("AA", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("Admin AI NOC", fontWeight = FontWeight.Bold, color = AccentBeige)
-                        Text("Administrator", color = PrimaryPurple, fontSize = 14.sp)
+                        Text("Admin AI NOC", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Administrator", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
                     }
-                    Icon(Icons.Default.ChevronRight, "Navigate", tint = AccentBeige)
+                    Icon(Icons.Default.ChevronRight, "Navigate", tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
 
         item { SettingsSection("PREFERENCES") }
-        item { SettingsRow("Theme", Icons.Default.DarkMode, value = "Dark") { contentNavController.navigate(Screen.ThemeSettings.route) } }
+        item { SettingsRow("Theme", Icons.Default.DarkMode, value = null) { contentNavController.navigate(Screen.ThemeSettings.route) } }
         item { SettingsRow("Notifications", Icons.Default.Notifications) { contentNavController.navigate(Screen.NotificationSettings.route) } }
 
         item { SettingsSection("ADMINISTRATION") }
@@ -131,7 +133,7 @@ fun SettingsScreen(
 private fun SettingsSection(title: String) {
     Text(
         text = title,
-        color = AccentBeige.copy(alpha = 0.7f),
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
         style = MaterialTheme.typography.labelMedium,
         modifier = Modifier.padding(top = 16.dp, bottom = 8.dp, start = 4.dp)
     )
@@ -147,17 +149,17 @@ private fun SettingsRow(title: String, icon: ImageVector, value: String? = null,
                 indication = null,
                 onClick = onClick
             ),
-        colors = CardDefaults.cardColors(containerColor = CardBackground)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = title, tint = AccentBeige)
+            Icon(icon, contentDescription = title, tint = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.width(16.dp))
-            Text(title, color = AccentBeige, modifier = Modifier.weight(1f))
+            Text(title, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
             value?.let {
-                Text(it, color = PrimaryPurple, fontWeight = FontWeight.Bold)
+                Text(it, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(8.dp))
             }
-            Icon(Icons.Default.ChevronRight, "Navigate", tint = AccentBeige)
+            Icon(Icons.Default.ChevronRight, "Navigate", tint = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -168,10 +170,10 @@ private fun SettingsRow(title: String, icon: ImageVector, value: String? = null,
 @Composable
 fun ProfileAndSecurityScreen(navController: NavController) {
     Scaffold(
-        containerColor = BackgroundDark,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Profile & Security", color = AccentBeige) },
+                title = { Text("Profile & Security", color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = { BackButton(navController) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
@@ -184,25 +186,27 @@ fun ProfileAndSecurityScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("User Details", style = MaterialTheme.typography.titleLarge, color = AccentBeige)
+            Text("User Details", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
             DetailRow("Username:", "Admin AI NOC")
             DetailRow("Email:", "adminainoc@gmail.com")
             DetailRow("Role:", "Administrator")
-            HorizontalDivider(color = CardBackground)
+            HorizontalDivider(color = MaterialTheme.colorScheme.surface)
             Button(
                 onClick = {},
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
-            ) { Text("Change Password", color = AccentBeige) }
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                interactionSource = remember { NoRippleInteractionSource() }
+            ) { Text("Change Password", color = MaterialTheme.colorScheme.onPrimary) }
             Button(
                 onClick = {},
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
-            ) { Text("Manage MFA", color = AccentBeige) }
-            HorizontalDivider(color = CardBackground)
-            Text("Active Sessions", style = MaterialTheme.typography.titleLarge, color = AccentBeige)
-            Text("This Device - Active Now", color = AccentBeige)
-            Text("Chrome on Windows - 2 hours ago", color = AccentBeige.copy(alpha = 0.6f))
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                interactionSource = remember { NoRippleInteractionSource() }
+            ) { Text("Manage MFA", color = MaterialTheme.colorScheme.onPrimary) }
+            HorizontalDivider(color = MaterialTheme.colorScheme.surface)
+            Text("Active Sessions", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
+            Text("This Device - Active Now", color = MaterialTheme.colorScheme.onBackground)
+            Text("Chrome on Windows - 2 hours ago", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
         }
     }
 }
@@ -212,10 +216,10 @@ fun ProfileAndSecurityScreen(navController: NavController) {
 fun ThemeSettingsScreen(navController: NavController, viewModel: SettingsViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     Scaffold(
-        containerColor = BackgroundDark,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Theme", color = AccentBeige) },
+                title = { Text("Theme", color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = { BackButton(navController) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
@@ -236,10 +240,11 @@ fun ThemeSettingsScreen(navController: NavController, viewModel: SettingsViewMod
                     RadioButton(
                         selected = uiState.selectedTheme == theme,
                         onClick = { viewModel.onThemeSelected(theme) },
-                        colors = RadioButtonDefaults.colors(selectedColor = PrimaryPurple)
+                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+                        interactionSource = remember { NoRippleInteractionSource() }
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text(theme.title, color = AccentBeige)
+                    Text(theme.title, color = MaterialTheme.colorScheme.onBackground)
                 }
             }
         }
@@ -251,10 +256,10 @@ fun ThemeSettingsScreen(navController: NavController, viewModel: SettingsViewMod
 fun NotificationSettingsScreen(navController: NavController, viewModel: SettingsViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     Scaffold(
-        containerColor = BackgroundDark,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Notifications", color = AccentBeige) },
+                title = { Text("Notifications", color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = { BackButton(navController) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
@@ -263,12 +268,12 @@ fun NotificationSettingsScreen(navController: NavController, viewModel: Settings
         LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(16.dp)) {
             item {
                 NotificationToggleRow("Enable Push Notifications", uiState.notificationsEnabled) { viewModel.onNotificationToggle("master", it) }
-                HorizontalDivider(color = CardBackground, modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.surface, modifier = Modifier.padding(vertical = 8.dp))
                 NotificationToggleRow("Critical", uiState.criticalNotifications, uiState.notificationsEnabled) { viewModel.onNotificationToggle("critical", it) }
                 NotificationToggleRow("High", uiState.highNotifications, uiState.notificationsEnabled) { viewModel.onNotificationToggle("high", it) }
                 NotificationToggleRow("Medium", uiState.mediumNotifications, uiState.notificationsEnabled) { viewModel.onNotificationToggle("medium", it) }
                 NotificationToggleRow("Low", uiState.lowNotifications, uiState.notificationsEnabled) { viewModel.onNotificationToggle("low", it) }
-                HorizontalDivider(color = CardBackground, modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.surface, modifier = Modifier.padding(vertical = 8.dp))
                 NotificationToggleRow("Quiet Hours", uiState.quietHoursEnabled) { viewModel.onQuietHoursToggle(it) }
                 if (uiState.quietHoursEnabled) {
                     Row(
@@ -278,9 +283,12 @@ fun NotificationSettingsScreen(navController: NavController, viewModel: Settings
                     ) {
                         Text(
                             "From ${uiState.quietHoursStart} to ${uiState.quietHoursEnd}",
-                            color = AccentBeige.copy(alpha = 0.8f)
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
                         )
-                        TextButton(onClick = {}) { Text("Edit", color = PrimaryPurple) }
+                        TextButton(
+                            onClick = {},
+                            interactionSource = remember { NoRippleInteractionSource() }
+                        ) { Text("Edit", color = MaterialTheme.colorScheme.primary) }
                     }
                 }
             }
@@ -292,14 +300,24 @@ fun NotificationSettingsScreen(navController: NavController, viewModel: Settings
 private fun NotificationToggleRow(title: String, isChecked: Boolean, enabled: Boolean = true, onToggle: (Boolean) -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        Text(title, modifier = Modifier.weight(1f), color = AccentBeige)
+        Text(title, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onBackground)
+
         Switch(
             checked = isChecked,
             onCheckedChange = onToggle,
             enabled = enabled,
-            colors = SwitchDefaults.colors(checkedThumbColor = PrimaryPurple)
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                uncheckedThumbColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                uncheckedTrackColor = MaterialTheme.colorScheme.surface
+            ),
+            interactionSource = remember { NoRippleInteractionSource() }
         )
     }
 }
@@ -312,20 +330,30 @@ fun AiManagementScreen(navController: NavController, viewModel: SettingsViewMode
 
     if (showDialog) {
         AlertDialog(
-            containerColor = CardBackground,
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { showDialog = false },
-            title = { Text("Confirm Recalibration", color = AccentBeige) },
-            text = { Text("This will retrain the anomaly detection baseline. This may take a few minutes.", color = AccentBeige.copy(alpha = 0.8f)) },
-            confirmButton = { TextButton(onClick = { viewModel.recalibrateAi(); showDialog = false }) { Text("Continue", color = PrimaryPurple) } },
-            dismissButton = { TextButton(onClick = { showDialog = false }) { Text("Cancel", color = AccentBeige) } }
+            title = { Text("Confirm Recalibration", color = MaterialTheme.colorScheme.onBackground) },
+            text = { Text("This will retrain the anomaly detection baseline. This may take a few minutes.", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)) },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.recalibrateAi(); showDialog = false },
+                    interactionSource = remember { NoRippleInteractionSource() }
+                ) { Text("Continue", color = MaterialTheme.colorScheme.primary) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDialog = false },
+                    interactionSource = remember { NoRippleInteractionSource() }
+                ) { Text("Cancel", color = MaterialTheme.colorScheme.onBackground) }
+            }
         )
     }
 
     Scaffold(
-        containerColor = BackgroundDark,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("AI Management", color = AccentBeige) },
+                title = { Text("AI Management", color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = { BackButton(navController) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
@@ -335,17 +363,18 @@ fun AiManagementScreen(navController: NavController, viewModel: SettingsViewMode
             Modifier.fillMaxSize().padding(padding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Feedback collected for 5 alerts.", color = AccentBeige)
+            Text("Feedback collected for 5 alerts.", color = MaterialTheme.colorScheme.onBackground)
             Button(
                 onClick = { showDialog = true },
                 enabled = !uiState.isRecalibrating,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                interactionSource = remember { NoRippleInteractionSource() }
             ) {
                 if (uiState.isRecalibrating) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = AccentBeige, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                 } else {
-                    Text("Recalibrate AI Baseline", color = AccentBeige)
+                    Text("Recalibrate AI Baseline", color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         }
@@ -356,22 +385,26 @@ fun AiManagementScreen(navController: NavController, viewModel: SettingsViewMode
 @Composable
 fun MaintenanceWindowsScreen(navController: NavController) {
     Scaffold(
-        containerColor = BackgroundDark,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Maintenance Windows", color = AccentBeige) },
+                title = { Text("Maintenance Windows", color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = { BackButton(navController) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {}, containerColor = PrimaryPurple) {
-                Icon(Icons.Default.Add, "Schedule Maintenance", tint = AccentBeige)
+            FloatingActionButton(
+                onClick = {},
+                containerColor = MaterialTheme.colorScheme.primary,
+                interactionSource = remember { NoRippleInteractionSource() }
+            ) {
+                Icon(Icons.Default.Add, "Schedule Maintenance", tint = MaterialTheme.colorScheme.onPrimary)
             }
         }
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-            Text("Maintenance Scheduling UI Placeholder", color = AccentBeige)
+            Text("Maintenance Scheduling UI Placeholder", color = MaterialTheme.colorScheme.onBackground)
         }
     }
 }
@@ -380,10 +413,10 @@ fun MaintenanceWindowsScreen(navController: NavController) {
 @Composable
 fun AboutScreen(navController: NavController) {
     Scaffold(
-        containerColor = BackgroundDark,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("About AI NOC", color = AccentBeige) },
+                title = { Text("About AI NOC", color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = { BackButton(navController) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
@@ -395,13 +428,13 @@ fun AboutScreen(navController: NavController) {
         ) {
             Image(painter = painterResource(id = R.drawable.ai_noc_logo), contentDescription = "App Logo", modifier = Modifier.size(100.dp))
             Spacer(Modifier.height(16.dp))
-            Text("AI NOC", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = AccentBeige)
-            Text("v1.0.0", color = AccentBeige.copy(alpha = 0.7f))
+            Text("AI NOC", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+            Text("v1.0.0", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
             Spacer(Modifier.height(24.dp))
             Text(
                 "AI-NOC: Intelligent Network Oversight is a next-generation tool designed for modern network administrators. It leverages machine learning to provide proactive monitoring, intelligent alerting, and deep forensic analysis.",
                 textAlign = TextAlign.Center,
-                color = AccentBeige
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
     }
@@ -409,15 +442,18 @@ fun AboutScreen(navController: NavController) {
 
 @Composable
 private fun BackButton(navController: NavController) {
-    IconButton(onClick = { navController.popBackStack() }) {
-        Icon(Icons.Default.ArrowBack, "Back", tint = AccentBeige)
+    IconButton(
+        onClick = { navController.popBackStack() },
+        interactionSource = remember { NoRippleInteractionSource() }
+    ) {
+        Icon(Icons.Default.ArrowBack, "Back", tint = MaterialTheme.colorScheme.onBackground)
     }
 }
 
 @Composable
 private fun DetailRow(label: String, value: String) {
     Row(Modifier.padding(vertical = 8.dp)) {
-        Text(label, modifier = Modifier.width(150.dp), fontWeight = FontWeight.Bold, color = AccentBeige.copy(alpha = 0.7f))
-        Text(value, color = AccentBeige)
+        Text(label, modifier = Modifier.width(150.dp), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
+        Text(value, color = MaterialTheme.colorScheme.onBackground)
     }
 }

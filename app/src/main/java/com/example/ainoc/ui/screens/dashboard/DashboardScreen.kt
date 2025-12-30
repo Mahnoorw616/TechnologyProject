@@ -6,6 +6,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,7 +22,7 @@ import com.example.ainoc.viewmodel.DashboardViewModel
 fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { /* Handle permission result if needed */ }
+    ) { /* Handle permission result */ }
 
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -38,17 +42,53 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
         verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // The DashboardHeader() is intentionally removed as the TopAppBar is now
-        // handled by the MainScreen composable for a consistent UI.
+        // Advanced Animated Orb
         item {
             HealthOrb(status = networkStatus)
         }
+
+        // KPI Row
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                KpiWidget(
+                    title = "Uptime",
+                    value = "99.99%",
+                    icon = Icons.Default.Wifi,
+                    trend = "Stable",
+                    isTrendPositive = true,
+                    modifier = Modifier.weight(1f)
+                )
+                KpiWidget(
+                    title = "Avg Latency",
+                    value = "24ms",
+                    icon = Icons.Default.Timer,
+                    trend = "-2ms",
+                    isTrendPositive = true,
+                    modifier = Modifier.weight(1f)
+                )
+                KpiWidget(
+                    title = "Packets",
+                    value = "12Gb/s",
+                    icon = Icons.Default.Speed,
+                    trend = "+15%",
+                    isTrendPositive = false,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
         item {
             LiveAlertsSummaryCard(summary = alertSummary)
         }
+
+        // Custom Drawn Canvas Chart
         item {
             NetworkThroughputCard(data = trafficData)
         }
+
         item {
             CorrelatedHotspotsCard(hotspots = hotspots)
         }

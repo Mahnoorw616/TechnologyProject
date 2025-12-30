@@ -39,18 +39,26 @@ fun LoginScreen(
     val loginResource = uiState.loginResource
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // THEME-AWARE GRADIENT
+    val isDark = MaterialTheme.colorScheme.isDark
+    val gradientColors = if (isDark) {
+        listOf(SplashGradientStart, SplashGradientEnd)
+    } else {
+        listOf(LightSplashGradientStart, LightSplashGradientEnd)
+    }
+
     LaunchedEffect(loginResource) {
         when (loginResource) {
             is Resource.Success -> {
                 navController.navigate(Screen.MfaEmail.route)
-                viewModel.consumeLoginEvent() // Prevent re-triggering
+                viewModel.consumeLoginEvent()
             }
             is Resource.Error -> {
                 snackbarHostState.showSnackbar(
                     message = loginResource.message ?: "An unknown error occurred",
                     duration = SnackbarDuration.Short
                 )
-                viewModel.consumeLoginEvent() // Also reset after showing error
+                viewModel.consumeLoginEvent()
             }
             else -> {}
         }
@@ -62,7 +70,7 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(SplashGradientStart, SplashGradientEnd)))
+                .background(Brush.verticalGradient(gradientColors))
                 .padding(paddingValues)
                 .padding(32.dp)
                 .verticalScroll(rememberScrollState()),
@@ -75,19 +83,19 @@ fun LoginScreen(
                 modifier = Modifier.size(90.dp).padding(bottom = 16.dp)
             )
 
-            Text("Welcome to AI-NOC", style = MaterialTheme.typography.headlineMedium, color = AccentBeige)
+            Text("Welcome to AI-NOC", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
             Spacer(modifier = Modifier.height(32.dp))
 
             val textFieldColors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedTextColor = AccentBeige,
-                unfocusedTextColor = AccentBeige,
-                cursorColor = PrimaryPurple,
-                focusedBorderColor = PrimaryPurple,
-                unfocusedBorderColor = AccentBeige.copy(alpha = 0.5f),
-                focusedLabelColor = PrimaryPurple,
-                unfocusedLabelColor = AccentBeige.copy(alpha = 0.7f),
-                focusedTrailingIconColor = PrimaryPurple,
-                unfocusedTrailingIconColor = AccentBeige.copy(alpha = 0.7f)
+                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                cursorColor = MaterialTheme.colorScheme.primary,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
+                unfocusedTrailingIconColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
 
             OutlinedTextField(value = uiState.serverUrl, onValueChange = viewModel::onServerUrlChange, label = { Text("Server URL") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = textFieldColors)
@@ -104,7 +112,10 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
                     val image = if (uiState.passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                    IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
+                    IconButton(
+                        onClick = { viewModel.togglePasswordVisibility() },
+                        interactionSource = remember { NoRippleInteractionSource() }
+                    ) {
                         Icon(imageVector = image, contentDescription = if (uiState.passwordVisible) "Hide password" else "Show password")
                     }
                 },
@@ -115,20 +126,21 @@ fun LoginScreen(
                 Checkbox(
                     checked = uiState.rememberUrl,
                     onCheckedChange = { viewModel.onRememberUrlChange(it) },
-                    colors = CheckboxDefaults.colors(checkedColor = PrimaryPurple)
+                    colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary),
+                    interactionSource = remember { NoRippleInteractionSource() }
                 )
-                Text("Remember Server URL", modifier = Modifier.padding(start = 8.dp), color = AccentBeige)
+                Text("Remember Server URL", modifier = Modifier.padding(start = 8.dp), color = MaterialTheme.colorScheme.onBackground)
             }
             Spacer(modifier = Modifier.height(24.dp))
 
             if (loginResource is Resource.Loading) {
-                CircularProgressIndicator(color = PrimaryPurple)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             } else {
                 Button(
                     onClick = { viewModel.loginUser() },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple, contentColor = AccentBeige),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
                     interactionSource = remember { NoRippleInteractionSource() }
                 ) {
                     Text("Login")
@@ -138,7 +150,7 @@ fun LoginScreen(
                 onClick = { navController.navigate(Screen.ResetPassword.route) },
                 interactionSource = remember { NoRippleInteractionSource() }
             ) {
-                Text("Forgot Password?", color = PrimaryPurple)
+                Text("Forgot Password?", color = MaterialTheme.colorScheme.primary)
             }
         }
     }

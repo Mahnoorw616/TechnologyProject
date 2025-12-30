@@ -21,6 +21,7 @@ class SessionManager @Inject constructor(context: Context) {
     companion object {
         val AUTH_TOKEN = stringPreferencesKey("auth_token")
         val SERVER_URL = stringPreferencesKey("server_url")
+        val APP_THEME = stringPreferencesKey("app_theme")
     }
 
     suspend fun saveAuthToken(token: String) {
@@ -41,6 +42,17 @@ class SessionManager @Inject constructor(context: Context) {
 
     val serverUrl: Flow<String?> = dataStore.data.map { preferences ->
         preferences[SERVER_URL]
+    }
+
+    suspend fun saveTheme(theme: String) {
+        dataStore.edit { preferences ->
+            preferences[APP_THEME] = theme
+        }
+    }
+
+    // Default to DARK if not set
+    val appTheme: Flow<String> = dataStore.data.map { preferences ->
+        preferences[APP_THEME] ?: "DARK"
     }
 
     suspend fun clearSession() {

@@ -7,7 +7,6 @@ import com.example.ainoc.data.model.User
 import com.example.ainoc.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -67,7 +66,13 @@ class LoginViewModel @Inject constructor() : ViewModel() {
 
     fun onMfaCodeChange(newValue: String) {
         if (newValue.length <= 6 && newValue.all { it.isDigit() }) {
-            _uiState.update { it.copy(mfaCode = newValue) }
+            _uiState.update {
+                it.copy(
+                    mfaCode = newValue,
+                    // Reset error state immediately when user starts typing again
+                    mfaCodeResource = Resource.Idle()
+                )
+            }
         }
     }
 
@@ -109,16 +114,18 @@ class LoginViewModel @Inject constructor() : ViewModel() {
         timerJob?.cancel()
         viewModelScope.launch {
             _uiState.update { it.copy(mfaEmailResource = Resource.Loading()) }
+
+            // Artificial delay to simulate network request
             delay(1500)
 
             generatedMfaCode = String.format("%06d", Random.nextInt(100_000, 999_999))
             println("AI-NOC Verification Code for ${_uiState.value.mfaEmail}: $generatedMfaCode")
 
-            // --- THIS IS THE FIX ---
-            // Only set Success for the initial send to trigger navigation.
             if (!isResend) {
+                // Initial send: Trigger navigation
                 _uiState.update { it.copy(mfaEmailResource = Resource.Success(Unit)) }
             } else {
+                // Resend: Stay on screen, just stop loading and reset logic
                 _uiState.update { it.copy(mfaEmailResource = Resource.Idle()) }
             }
 
@@ -128,7 +135,7 @@ class LoginViewModel @Inject constructor() : ViewModel() {
 
     private fun startResendTimer() {
         timerJob = viewModelScope.launch {
-            _uiState.update { it.copy(isResendTimerRunning = true, resendTimerSeconds = 30) }
+            _uiState.update { it.copy(isResendTimerRunning = true, resendTimerSeconds = 30, canResendCode = false) }
             for (i in 30 downTo 1) {
                 delay(1000)
                 _uiState.update { it.copy(resendTimerSeconds = i - 1) }
@@ -140,15 +147,20 @@ class LoginViewModel @Inject constructor() : ViewModel() {
     fun verifyMfaCode() {
         viewModelScope.launch {
             _uiState.update { it.copy(mfaCodeResource = Resource.Loading()) }
-            delay(1000)
 
+            // Check code
             if (_uiState.value.mfaCode == generatedMfaCode) {
+                // SUCCESS: No delay here, proceed immediately
                 val user = User(username = "Admin AI NOC", email = _uiState.value.mfaEmail)
                 _uiState.update { it.copy(mfaCodeResource = Resource.Success(user)) }
             } else {
-                _uiState.update { it.copy(mfaCodeResource = Resource.Error("Incorrect code. Please try again.")) }
-                delay(2000)
-                _uiState.update { it.copy(mfaCodeResource = Resource.Idle()) }
+                // FAILURE: Small delay to simulate server check, then show error
+                delay(500)
+                _uiState.update {
+                    it.copy(mfaCodeResource = Resource.Error("Incorrect code. Please try again."))
+                }
+                // We DO NOT auto-clear the error here. It persists so the user can read it.
+                // It clears in onMfaCodeChange when they type.
             }
         }
     }

@@ -8,13 +8,11 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Data class to hold the state of the advanced filters
 data class AdvancedFilterState(
     val priorities: Set<AlertPriority> = emptySet(),
     val statuses: Set<AlertStatus> = emptySet()
 )
 
-// Data class for the entire screen's UI state
 data class AlertsUiState(
     val filteredAlerts: List<Alert> = emptyList(),
     val isSearchActive: Boolean = false,
@@ -26,13 +24,11 @@ data class AlertsUiState(
 @HiltViewModel
 class AlertsViewModel @Inject constructor() : ViewModel() {
 
-    // --- Private Data & State ---
     private val _allAlerts = MutableStateFlow<List<Alert>>(emptyList())
     private val _activeSmartFilter = MutableStateFlow("All")
     private val _searchQuery = MutableStateFlow("")
     private val _advancedFilterState = MutableStateFlow(AdvancedFilterState())
 
-    // --- Public UI State ---
     private val _uiState = MutableStateFlow(AlertsUiState())
     val uiState = _uiState.asStateFlow()
     val smartFilters = listOf("All", "New", "Critical", "High")
@@ -46,7 +42,6 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
         val baseAlerts = fullAlertDetailsList.map { it.baseInfo }
         _allAlerts.value = baseAlerts
 
-        // This is a reactive pipeline. Whenever any filter changes, the final list is automatically recalculated.
         viewModelScope.launch {
             combine(_allAlerts, _activeSmartFilter, _searchQuery, _advancedFilterState) { alerts, smartFilter, query, advancedFilters ->
                 var filteredList = alerts
@@ -68,6 +63,7 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
                 }
 
                 // 3. Apply Advanced Filters
+                // Logic: If the set is NOT empty, we filter. If empty, we show all (effectively ignored).
                 if (advancedFilters.priorities.isNotEmpty()) {
                     filteredList = filteredList.filter { it.priority in advancedFilters.priorities }
                 }
@@ -75,21 +71,20 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
                     filteredList = filteredList.filter { it.status in advancedFilters.statuses }
                 }
 
-                _uiState.update { it.copy(filteredAlerts = filteredList) }
+                _uiState.update { it.copy(filteredAlerts = filteredList, advancedFilterState = advancedFilters) }
             }.collect()
         }
     }
 
-    // --- Public Event Handlers ---
-
     fun onSmartFilterClicked(filter: String) {
         _activeSmartFilter.value = filter
-        _advancedFilterState.value = AdvancedFilterState() // Reset advanced filters
+        _advancedFilterState.value = AdvancedFilterState() // Reset advanced filters on smart filter click
     }
 
     fun onSearchQueryChanged(query: String) { _searchQuery.value = query }
+
     fun toggleSearch() {
-        if (_uiState.value.isSearchActive) _searchQuery.value = "" // Clear search when closing
+        if (_uiState.value.isSearchActive) _searchQuery.value = ""
         _uiState.update { it.copy(isSearchActive = !it.isSearchActive) }
     }
 
@@ -111,8 +106,10 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
     }
 
     fun resetAdvancedFilters() { _advancedFilterState.value = AdvancedFilterState() }
+
     fun applyAdvancedFilters() {
-        _activeSmartFilter.value = "All" // Advanced filters override smart filters
+        // When applying advanced filters, we reset the smart filter to "All" to avoid confusion
+        _activeSmartFilter.value = "All"
         hideAdvancedFilter()
     }
 
@@ -134,6 +131,7 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun createDummyAlerts(): List<AlertDetails> {
+        // Dummy data generation from original file
         return listOf(
             AlertDetails(
                 baseInfo = Alert("CRITICAL-001", AlertPriority.CRITICAL, "Suspected Brute-Force Attack", "Primary-DB-Server", 10, "2m ago", AlertStatus.NEW),
