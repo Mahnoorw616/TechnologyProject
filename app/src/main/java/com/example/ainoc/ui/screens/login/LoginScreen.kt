@@ -30,26 +30,28 @@ import com.example.ainoc.util.NoRippleInteractionSource
 import com.example.ainoc.util.Resource
 import com.example.ainoc.viewmodel.LoginViewModel
 
+// This is the first screen the user sees after the splash screen.
+// It allows users to enter their credentials to sign in.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     navController: NavController,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
+    // These variables keep track of what the user is typing and if the login is loading or failed.
     val uiState by viewModel.uiState.collectAsState()
     val loginResource = uiState.loginResource
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // THEME-AWARE GRADIENT
+    // Chooses the background color gradient based on whether the phone is in Dark or Light mode.
     val isDark = MaterialTheme.colorScheme.isDark
     val gradientColors = if (isDark) {
-        // Fix: Use correct variable names from Color.kt
         listOf(SplashStartDark, SplashEndDark)
     } else {
-        // Fix: Use correct variable names from Color.kt
         listOf(SplashStartLight, SplashEndLight)
     }
 
+    // Automatically moves to the next screen (2FA Email) if login is successful.
     LaunchedEffect(loginResource) {
         when (loginResource) {
             is Resource.Success -> {
@@ -57,6 +59,7 @@ fun LoginScreen(
                 viewModel.consumeLoginEvent()
             }
             is Resource.Error -> {
+                // Shows a small popup message if something goes wrong.
                 snackbarHostState.showSnackbar(
                     message = loginResource.message ?: "An unknown error occurred",
                     duration = SnackbarDuration.Short
@@ -67,29 +70,32 @@ fun LoginScreen(
         }
     }
 
+    // Scaffold provides the basic structure for the screen, like where to put the snackbar messages.
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                // Fix: explicit assignment to 'colors' parameter to avoid ambiguity
-                .background(Brush.verticalGradient(colors = gradientColors))
+                .background(Brush.verticalGradient(colors = gradientColors)) // Applies the colorful background.
                 .padding(paddingValues)
                 .padding(32.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState()), // Allows scrolling if the screen is small.
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Displays the app logo at the top.
             Image(
                 painter = painterResource(id = R.drawable.ai_noc_logo),
                 contentDescription = "AI-NOC Logo",
                 modifier = Modifier.size(90.dp).padding(bottom = 16.dp)
             )
 
+            // Shows the welcome text.
             Text("Welcome to AI-NOC", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Defines the colors for all text boxes so they look good on the gradient background.
             val textFieldColors = TextFieldDefaults.outlinedTextFieldColors(
                 focusedTextColor = MaterialTheme.colorScheme.onBackground,
                 unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
@@ -102,6 +108,7 @@ fun LoginScreen(
                 unfocusedTrailingIconColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
 
+            // Input field for the Server URL.
             OutlinedTextField(
                 value = uiState.serverUrl,
                 onValueChange = viewModel::onServerUrlChange,
@@ -111,6 +118,8 @@ fun LoginScreen(
                 colors = textFieldColors
             )
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Input field for Username or Email.
             OutlinedTextField(
                 value = uiState.username,
                 onValueChange = viewModel::onUsernameChange,
@@ -120,6 +129,8 @@ fun LoginScreen(
                 colors = textFieldColors
             )
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Input field for Password with a show/hide eye icon.
             OutlinedTextField(
                 value = uiState.password,
                 onValueChange = viewModel::onPasswordChange,
@@ -140,6 +151,8 @@ fun LoginScreen(
                 colors = textFieldColors
             )
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Checkbox to remember the server URL for next time.
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Checkbox(
                     checked = uiState.rememberUrl,
@@ -151,6 +164,7 @@ fun LoginScreen(
             }
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Shows a spinner if logging in, otherwise shows the Login button.
             if (loginResource is Resource.Loading) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             } else {
@@ -164,6 +178,8 @@ fun LoginScreen(
                     Text("Login")
                 }
             }
+
+            // Button to go to the password reset screen.
             TextButton(
                 onClick = { navController.navigate(Screen.ResetPassword.route) },
                 interactionSource = remember { NoRippleInteractionSource() }

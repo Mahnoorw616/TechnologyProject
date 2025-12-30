@@ -1,8 +1,7 @@
 package com.example.ainoc.data.remote
 
-/**
- * A Retrofit interface that defines the API endpoints for the AI-NOC backend.
- */
+// This is the blueprint for how our app talks to the internet.
+// It acts like a menu of requests (like "Login" or "Get Alerts") that we can send to the backend server.
 interface ApiService {
 
     // TODO: Define your network API calls here. For example:

@@ -28,24 +28,24 @@ import kotlin.random.Random
 private const val NODE_COUNT = 12
 private const val CONNECTION_SPEED_MS = 3000
 
+// This is the very first screen that appears when the app opens.
+// It shows a custom neural network animation while the app loads.
 @Composable
 fun SplashScreen(navController: NavController) {
     val mainProgress = remember { Animatable(0f) }
     val contentAlpha = remember { Animatable(0f) }
 
-    // Dynamic gradient based on Theme
+    // Selects the background gradient based on theme.
     val isDark = MaterialTheme.colorScheme.isDark
     val gradientColors = if (isDark) {
-        // Fix: Use correct variable names from Color.kt
         listOf(SplashStartDark, SplashEndDark)
     } else {
-        // Fix: Use correct variable names from Color.kt
         listOf(SplashStartLight, SplashEndLight)
     }
 
-    // Dynamic text color
     val textColor = MaterialTheme.colorScheme.onBackground
 
+    // Starts the animations and moves to the login screen after a delay.
     LaunchedEffect(key1 = true) {
         contentAlpha.animateTo(1f, animationSpec = tween(1000))
         mainProgress.animateTo(
@@ -71,13 +71,15 @@ fun SplashScreen(navController: NavController) {
         ) {
             Spacer(modifier = Modifier.weight(1f))
 
+            // The main animation container.
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.size(300.dp)
             ) {
-                // Pass text color to animation for consistency
+                // Draws the neural network effect.
                 NeuralNetworkAnimation(progress = mainProgress.value, baseColor = MaterialTheme.colorScheme.primary)
 
+                // Fades in the "AI" logo text.
                 Text(
                     text = "AI",
                     color = textColor.copy(alpha = contentAlpha.value),
@@ -94,6 +96,7 @@ fun SplashScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // App title and subtitle.
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(horizontal = 40.dp)
@@ -119,7 +122,6 @@ fun SplashScreen(navController: NavController) {
     }
 }
 
-// ... Data class NeuronNode remains same ...
 private data class NeuronNode(
     val id: Int,
     val initialAngle: Float,
@@ -127,8 +129,10 @@ private data class NeuronNode(
     val speed: Float
 )
 
+// This function draws the animated connecting lines and dots.
 @Composable
 fun NeuralNetworkAnimation(progress: Float, baseColor: Color) {
+    // Creates a list of random points (neurons).
     val nodes = remember {
         List(NODE_COUNT) { i ->
             NeuronNode(
@@ -140,6 +144,7 @@ fun NeuralNetworkAnimation(progress: Float, baseColor: Color) {
         }
     }
 
+    // Creates a continuous drifting movement.
     val infiniteTransition = rememberInfiniteTransition(label = "drift")
     val time by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -151,7 +156,6 @@ fun NeuralNetworkAnimation(progress: Float, baseColor: Color) {
         label = "time"
     )
 
-    // Theme-aware colors
     val secondaryColor = MaterialTheme.colorScheme.onBackground
 
     Canvas(modifier = Modifier.fillMaxSize()) {
@@ -159,6 +163,7 @@ fun NeuralNetworkAnimation(progress: Float, baseColor: Color) {
         val centerY = size.height / 2
         val maxRadius = size.minDimension / 2
 
+        // Calculate positions for all nodes.
         val currentPositions = nodes.map { node ->
             val currentAngle = Math.toRadians((node.initialAngle + (time * 20 * node.speed)).toDouble())
             val currentDist = (maxRadius * 0.8f) - (progress * 50f)
@@ -168,10 +173,12 @@ fun NeuralNetworkAnimation(progress: Float, baseColor: Color) {
             )
         }
 
+        // Calculate how many connections to draw based on progress.
         val totalConnections = nodes.size
         val progressIndex = (progress * totalConnections).toInt()
         val progressRemainder = (progress * totalConnections) - progressIndex
 
+        // Draw the lines connecting the nodes.
         for (i in 0 until totalConnections) {
             val startNodeIndex = i
             val endNodeIndex = (i + 1) % totalConnections
@@ -189,6 +196,7 @@ fun NeuralNetworkAnimation(progress: Float, baseColor: Color) {
                     cap = StrokeCap.Round
                 )
             } else if (i == progressIndex) {
+                // Draws the growing line that hasn't finished yet.
                 val start = currentPositions[startNodeIndex]
                 val end = currentPositions[endNodeIndex]
                 val currentX = start.x + (end.x - start.x) * progressRemainder
@@ -207,6 +215,7 @@ fun NeuralNetworkAnimation(progress: Float, baseColor: Color) {
             }
         }
 
+        // Draw faint extra lines to make it look like a mesh.
         if (progress > 0.2f) {
             val meshAlpha = (progress - 0.2f).coerceIn(0f, 0.3f)
             for (i in 0 until nodes.size) {
@@ -220,6 +229,7 @@ fun NeuralNetworkAnimation(progress: Float, baseColor: Color) {
             }
         }
 
+        // Draw the dots (neurons) themselves.
         currentPositions.forEachIndexed { index, pos ->
             val isActive = index <= progressIndex
             val pulse = sin(time + index).toFloat() * 2f

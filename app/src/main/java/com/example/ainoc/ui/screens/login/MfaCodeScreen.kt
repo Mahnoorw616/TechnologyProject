@@ -22,6 +22,8 @@ import com.example.ainoc.util.NoRippleInteractionSource
 import com.example.ainoc.util.Resource
 import com.example.ainoc.viewmodel.LoginViewModel
 
+// This screen is the final step of login.
+// Users enter the 6-digit code sent to their email or app.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MfaCodeScreen(
@@ -32,7 +34,7 @@ fun MfaCodeScreen(
     val mfaCodeResource = uiState.mfaCodeResource
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Dynamic Gradient
+    // Sets the background colors based on the current theme (Light or Dark).
     val isDark = MaterialTheme.colorScheme.isDark
     val gradientColors = if (isDark) {
         listOf(SplashStartDark, SplashEndDark)
@@ -40,12 +42,15 @@ fun MfaCodeScreen(
         listOf(SplashStartLight, SplashEndLight)
     }
 
+    // Handles what happens when the code is verified.
     LaunchedEffect(mfaCodeResource) {
         if (mfaCodeResource is Resource.Success) {
+            // If correct, go to the main app dashboard.
             navController.navigate(Screen.Main.route) {
                 popUpTo(Screen.Login.route) { inclusive = true }
             }
         } else if (mfaCodeResource is Resource.Error) {
+            // If wrong (and not handled by inline text), show a popup.
             snackbarHostState.showSnackbar(mfaCodeResource.message ?: "An error occurred")
         }
     }
@@ -70,12 +75,13 @@ fun MfaCodeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(colors = gradientColors))
+                .background(Brush.verticalGradient(colors = gradientColors)) // Applies the gradient.
                 .padding(paddingValues)
                 .padding(32.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Instructions for the user.
             Text(
                 "Check your Authenticator App",
                 style = MaterialTheme.typography.headlineSmall,
@@ -93,6 +99,7 @@ fun MfaCodeScreen(
 
             val isError = mfaCodeResource is Resource.Error
 
+            // The box where the user types the code.
             OutlinedTextField(
                 value = uiState.mfaCode,
                 onValueChange = { viewModel.onMfaCodeChange(it) },
@@ -114,6 +121,7 @@ fun MfaCodeScreen(
                 )
             )
 
+            // Shows a red error message below the box if the code is wrong.
             if (isError) {
                 Text(
                     text = mfaCodeResource.message ?: "Incorrect code",
@@ -127,6 +135,8 @@ fun MfaCodeScreen(
 
             Spacer(Modifier.height(16.dp))
 
+            // Button to resend the code if they didn't get it.
+            // It disables itself for 30 seconds to prevent spamming.
             val resendButtonEnabled = !uiState.isResendTimerRunning && mfaCodeResource !is Resource.Loading
             TextButton(
                 onClick = { viewModel.sendMfaCode(isResend = true) },
@@ -141,6 +151,7 @@ fun MfaCodeScreen(
 
             Spacer(Modifier.height(16.dp))
 
+            // Shows a spinner while checking the code, or the "Verify" button.
             if (mfaCodeResource is Resource.Loading) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             } else {

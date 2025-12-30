@@ -8,11 +8,14 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// Holds the user's choices for advanced filtering (like which Priorities are checked).
 data class AdvancedFilterState(
     val priorities: Set<AlertPriority> = emptySet(),
     val statuses: Set<AlertStatus> = emptySet()
 )
 
+// Holds all the data needed to draw the Alerts screen at any moment.
+// If this data changes, the screen automatically updates.
 data class AlertsUiState(
     val filteredAlerts: List<Alert> = emptyList(),
     val isSearchActive: Boolean = false,
@@ -21,32 +24,44 @@ data class AlertsUiState(
     val alertDetails: AlertDetails? = null
 )
 
+// This class is the "Brain" of the Alerts screen.
+// It handles all the logic: filtering lists, searching, and preparing data for the UI to display.
 @HiltViewModel
 class AlertsViewModel @Inject constructor() : ViewModel() {
 
+    // These variables hold the raw data and user choices internally.
     private val _allAlerts = MutableStateFlow<List<Alert>>(emptyList())
     private val _activeSmartFilter = MutableStateFlow("All")
     private val _searchQuery = MutableStateFlow("")
     private val _advancedFilterState = MutableStateFlow(AdvancedFilterState())
 
+    // This is the public version of the state that the UI watches.
+    // The UI can read it but cannot change it directly.
     private val _uiState = MutableStateFlow(AlertsUiState())
     val uiState = _uiState.asStateFlow()
+
+    // Simple lists for the filter buttons at the top of the screen.
     val smartFilters = listOf("All", "New", "Critical", "High")
     val activeSmartFilter = _activeSmartFilter.asStateFlow()
     val searchQuery = _searchQuery.asStateFlow()
 
+    // A list containing the full details for every alert (used for the Details screen).
     private val fullAlertDetailsList: List<AlertDetails>
 
+    // This block runs once when the screen is first created.
     init {
+        // We load some fake data to start with.
         fullAlertDetailsList = createDummyAlerts()
         val baseAlerts = fullAlertDetailsList.map { it.baseInfo }
         _allAlerts.value = baseAlerts
 
+        // This powerful block watches all our inputs (search text, filters, raw data).
+        // Whenever ANY of them change, it automatically recalculates the final list of alerts to show.
         viewModelScope.launch {
             combine(_allAlerts, _activeSmartFilter, _searchQuery, _advancedFilterState) { alerts, smartFilter, query, advancedFilters ->
                 var filteredList = alerts
 
-                // 1. Apply Smart Filter
+                // 1. Apply the top horizontal filter buttons (All/New/Critical).
                 if (smartFilter != "All") {
                     when (smartFilter) {
                         "New" -> filteredList = filteredList.filter { it.status == AlertStatus.NEW }
@@ -55,15 +70,14 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
                     }
                 }
 
-                // 2. Apply Search Query
+                // 2. Apply the search text if the user typed anything.
                 if (query.isNotBlank()) {
                     filteredList = filteredList.filter {
                         it.title.contains(query, ignoreCase = true) || it.device.contains(query, ignoreCase = true)
                     }
                 }
 
-                // 3. Apply Advanced Filters
-                // Logic: If the set is NOT empty, we filter. If empty, we show all (effectively ignored).
+                // 3. Apply the detailed checkbox filters from the popup.
                 if (advancedFilters.priorities.isNotEmpty()) {
                     filteredList = filteredList.filter { it.priority in advancedFilters.priorities }
                 }
@@ -71,26 +85,32 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
                     filteredList = filteredList.filter { it.status in advancedFilters.statuses }
                 }
 
+                // Updates the UI state with the final calculated list.
                 _uiState.update { it.copy(filteredAlerts = filteredList, advancedFilterState = advancedFilters) }
             }.collect()
         }
     }
 
+    // Call this when a user taps a filter chip (e.g., "Critical").
     fun onSmartFilterClicked(filter: String) {
         _activeSmartFilter.value = filter
         _advancedFilterState.value = AdvancedFilterState() // Reset advanced filters on smart filter click
     }
 
+    // Call this as the user types in the search bar.
     fun onSearchQueryChanged(query: String) { _searchQuery.value = query }
 
+    // Shows or hides the search bar.
     fun toggleSearch() {
         if (_uiState.value.isSearchActive) _searchQuery.value = ""
         _uiState.update { it.copy(isSearchActive = !it.isSearchActive) }
     }
 
+    // Functions to open and close the Advanced Filter popup.
     fun showAdvancedFilter() { _uiState.update { it.copy(isAdvancedFilterVisible = true) } }
     fun hideAdvancedFilter() { _uiState.update { it.copy(isAdvancedFilterVisible = false) } }
 
+    // Updates the internal list of selected Priority checkboxes.
     fun updateAdvancedFilterPriorities(priority: AlertPriority, isChecked: Boolean) {
         _advancedFilterState.update { current ->
             val newPriorities = if (isChecked) current.priorities + priority else current.priorities - priority
@@ -98,6 +118,7 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
         }
     }
 
+    // Updates the internal list of selected Status checkboxes.
     fun updateAdvancedFilterStatuses(status: AlertStatus, isChecked: Boolean) {
         _advancedFilterState.update { current ->
             val newStatuses = if (isChecked) current.statuses + status else current.statuses - status
@@ -105,22 +126,25 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
         }
     }
 
+    // Clears all advanced filter checkboxes.
     fun resetAdvancedFilters() { _advancedFilterState.value = AdvancedFilterState() }
 
+    // Closes the filter popup and applies the selected checkboxes.
     fun applyAdvancedFilters() {
-        // When applying advanced filters, we reset the smart filter to "All" to avoid confusion
         _activeSmartFilter.value = "All"
         hideAdvancedFilter()
     }
 
+    // Finds the specific details for an alert ID so the Details Screen can show them.
     fun loadAlertDetails(alertId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(alertDetails = null) }
-            kotlinx.coroutines.delay(300)
+            kotlinx.coroutines.delay(300) // Small fake delay to simulate loading.
             _uiState.update { it.copy(alertDetails = fullAlertDetailsList.find { a -> a.baseInfo.id == alertId }) }
         }
     }
 
+    // Updates the status of an alert (e.g., from "New" to "Resolved") and adds a log entry.
     fun updateAlertStatus(newStatus: AlertStatus) {
         _uiState.update { state ->
             state.alertDetails?.copy(
@@ -130,8 +154,8 @@ class AlertsViewModel @Inject constructor() : ViewModel() {
         }
     }
 
+    // Creates the fake example data used for testing the app.
     private fun createDummyAlerts(): List<AlertDetails> {
-        // Dummy data generation from original file
         return listOf(
             AlertDetails(
                 baseInfo = Alert("CRITICAL-001", AlertPriority.CRITICAL, "Suspected Brute-Force Attack", "Primary-DB-Server", 10, "2m ago", AlertStatus.NEW),

@@ -13,13 +13,14 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+// This list defines the choices the user has for how the app looks (Light, Dark, or System Default).
 enum class ThemeSetting(val title: String) {
     SYSTEM_DEFAULT("System Default"),
     LIGHT("Light"),
     DARK("Dark")
 }
 
-// Dark Theme: Dark BG, Beige Text
+// This organizes the dark colors and assigns them to specific UI parts (like background vs text).
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryPurpleDark,
     onPrimary = TextBeige,
@@ -33,7 +34,7 @@ private val DarkColorScheme = darkColorScheme(
     outline = Color.Gray
 )
 
-// Light Theme: Beige BG, Grey/Purple Text
+// This organizes the light colors and assigns them to specific UI parts.
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryPurpleLight,
     onPrimary = Color.White,
@@ -47,24 +48,29 @@ private val LightColorScheme = lightColorScheme(
     outline = BorderLight
 )
 
+// This is a helper tool to quickly check if the current theme is using the dark background.
 val ColorScheme.isDark: Boolean
     get() = this.background == BackgroundDark
 
+// This is the main wrapper that applies the chosen colors and fonts to the whole app.
 @Composable
 fun AINOCTheme(
     themeSetting: ThemeSetting = ThemeSetting.DARK,
     content: @Composable () -> Unit
 ) {
+    // Decides whether to show dark mode based on the user's choice or the phone's system setting.
     val darkTheme = when (themeSetting) {
         ThemeSetting.LIGHT -> false
         ThemeSetting.DARK -> true
         ThemeSetting.SYSTEM_DEFAULT -> isSystemInDarkTheme()
     }
 
+    // Picks the correct set of colors based on the decision above.
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     val view = LocalView.current
     if (!view.isInEditMode) {
+        // This ensures the status bar at the very top of the phone matches the app's background color.
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
@@ -72,6 +78,7 @@ fun AINOCTheme(
         }
     }
 
+    // Applies the colors, shapes, and fonts to the content inside.
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,

@@ -9,15 +9,14 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+// This is a setup module for our dependency injection tool (Hilt).
+// It tells the app how to create and provide core tools that live as long as the app is running.
 @Module
-@InstallIn(SingletonComponent::class) // These dependencies will live as long as the application
+@InstallIn(SingletonComponent::class)
 object AppModule {
 
-    /**
-     * Provides a singleton instance of SessionManager.
-     * @param context The application context, provided by Hilt.
-     * @return A singleton SessionManager instance.
-     */
+    // This function teaches Hilt how to make a SessionManager.
+    // Whenever any part of the app asks for "SessionManager", Hilt runs this code to give it one.
     @Singleton
     @Provides
     fun provideSessionManager(@ApplicationContext context: Context): SessionManager {

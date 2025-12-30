@@ -15,24 +15,29 @@ import com.example.ainoc.data.model.Comment
 import com.example.ainoc.data.model.TimelineEvent
 import com.example.ainoc.ui.theme.*
 
-// Note: The FilterChip from the main AlertsScreen.kt is used directly.
-// This file contains the other helper widgets for the details screen.
+// This file contains small, reusable UI parts specifically for the "Alert Details" screen.
 
+// This draws a single step in the vertical timeline (the line with dots on the left).
+// It connects events visually to show the sequence of what happened.
 @Composable
 fun TimelineNode(event: TimelineEvent) {
     Row(modifier = Modifier.height(IntrinsicSize.Min)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // Draw the line above the dot (unless it's the very first event).
             if (!event.isFirst) {
                 Divider(Modifier.height(16.dp).width(2.dp), color = PrimaryPurple.copy(alpha = 0.5f))
             } else {
                 Spacer(Modifier.height(16.dp))
             }
+            // Draw the dot representing this event.
             Icon(Icons.Default.Circle, contentDescription = null, tint = PrimaryPurple, modifier = Modifier.size(12.dp))
+            // Draw the line below the dot (unless it's the very last event).
             if (!event.isLast) {
                 Divider(Modifier.fillMaxHeight().width(2.dp), color = PrimaryPurple.copy(alpha = 0.5f))
             }
         }
         Spacer(Modifier.width(16.dp))
+        // Draw the text (Time and Description) next to the timeline.
         Column(Modifier.padding(bottom = if (!event.isLast) 32.dp else 0.dp)) {
             Text(event.timestamp, fontWeight = FontWeight.Bold, color = AccentBeige)
             Text(event.description, color = AccentBeige.copy(alpha = 0.8f))
@@ -40,6 +45,8 @@ fun TimelineNode(event: TimelineEvent) {
     }
 }
 
+// This creates a standard card layout for sections like "AI Insight" or "Recommendations".
+// It gives them a consistent background, rounded corners, and a title with an icon.
 @Composable
 fun EvidenceCard(title: String, icon: @Composable () -> Unit, content: @Composable () -> Unit) {
     Card(
@@ -49,16 +56,18 @@ fun EvidenceCard(title: String, icon: @Composable () -> Unit, content: @Composab
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                icon()
+                icon() // The icon passed in (like a lightbulb)
                 Spacer(Modifier.width(8.dp))
                 Text(title, style = MaterialTheme.typography.titleMedium, color = AccentBeige)
             }
             Spacer(Modifier.height(12.dp))
-            content()
+            content() // The actual text or data passed in to be displayed inside the card.
         }
     }
 }
 
+// This draws a single user comment in a chat-bubble style.
+// It shows who wrote it, when, and what they said.
 @Composable
 fun CommentItem(comment: Comment) {
     Card(

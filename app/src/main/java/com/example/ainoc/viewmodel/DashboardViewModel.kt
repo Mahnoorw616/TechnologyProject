@@ -1,42 +1,51 @@
 package com.example.ainoc.viewmodel
 
 import androidx.lifecycle.ViewModel
-// --- THIS IS THE FIX ---
-import com.example.ainoc.data.model.* // Correctly imports all necessary data models
-// -----------------------
+import com.example.ainoc.data.model.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 
+// This ViewModel is the "brain" for the main Dashboard screen.
+// It holds all the live data that the dashboard needs to display, like network health, charts, and alerts.
 @HiltViewModel
 class DashboardViewModel @Inject constructor() : ViewModel() {
 
+    // Holds the current health status of the network (e.g., Healthy, Critical).
     private val _networkStatus = MutableStateFlow(NetworkStatus.HEALTHY)
     val networkStatus = _networkStatus.asStateFlow()
 
+    // Holds the counts for the alert summary card (e.g., "5 Critical", "2 High").
     private val _alertSummary = MutableStateFlow(AlertSummary(0, 0, 0, 0))
     val alertSummary = _alertSummary.asStateFlow()
 
+    // Holds the list of major problem areas ("Hotspots") to display on the dashboard.
     private val _hotspots = MutableStateFlow<List<CorrelatedHotspot>>(emptyList())
     val hotspots = _hotspots.asStateFlow()
 
+    // Holds the list of recent security threats for the news feed widget.
     private val _threatIntelFeed = MutableStateFlow<List<ThreatIntelItem>>(emptyList())
     val threatIntelFeed = _threatIntelFeed.asStateFlow()
 
+    // Holds the data points for the network traffic chart (the graph).
     private val _trafficData = MutableStateFlow<List<ChartDataPoint>>(emptyList())
     val trafficData = _trafficData.asStateFlow()
 
+    // This block runs automatically when the Dashboard is first opened.
     init {
         loadDummyData()
     }
 
+    // Creates fake example data so we can see what the dashboard looks like without a real server connection.
     private fun loadDummyData() {
-        // This simulates fetching real-time data from a repository
+        // Sets the big orb to green/healthy.
         _networkStatus.value = NetworkStatus.HEALTHY
 
+        // Sets the alert counts.
         _alertSummary.value = AlertSummary(critical = 1, high = 0, medium = 3, low = 8)
 
+        // Creates a list of devices with issues.
         _hotspots.value = listOf(
             CorrelatedHotspot(
                 deviceName = "Primary-DB-Server",
@@ -61,6 +70,7 @@ class DashboardViewModel @Inject constructor() : ViewModel() {
             )
         )
 
+        // Creates a list of fake security threats.
         _threatIntelFeed.value = listOf(
             ThreatIntelItem(
                 timestamp = "1 min ago",
@@ -79,6 +89,7 @@ class DashboardViewModel @Inject constructor() : ViewModel() {
             )
         )
 
+        // Creates fake graph data points.
         _trafficData.value = listOf(
             ChartDataPoint("6:00 PM", 2.5f, 1.8f),
             ChartDataPoint("6:15 PM", 2.2f, 1.5f),

@@ -25,18 +25,21 @@ import androidx.navigation.NavController
 import com.example.ainoc.R
 import com.example.ainoc.ui.navigation.Screen
 import com.example.ainoc.ui.theme.*
-import com.example.ainoc.ui.theme.ThemeSetting // <--- CORRECTED IMPORT
+import com.example.ainoc.ui.theme.ThemeSetting
 import com.example.ainoc.util.NoRippleInteractionSource
 import com.example.ainoc.viewmodel.SettingsViewModel
 
+// This screen shows all the configuration options for the app (Account, Theme, Notifications, etc.).
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     contentNavController: NavController,
     mainNavController: NavController
 ) {
+    // Tracks whether the logout confirmation popup is visible.
     var showLogoutDialog by remember { mutableStateOf(false) }
 
+    // Shows the logout confirmation dialog if the button was clicked.
     if (showLogoutDialog) {
         AlertDialog(
             containerColor = MaterialTheme.colorScheme.surface,
@@ -47,6 +50,7 @@ fun SettingsScreen(
                 TextButton(
                     onClick = {
                         showLogoutDialog = false
+                        // Navigates back to the Login screen and clears the history so the user can't go back.
                         mainNavController.navigate(Screen.Login.route) {
                             popUpTo(0) { inclusive = true }
                         }
@@ -67,13 +71,16 @@ fun SettingsScreen(
         )
     }
 
+    // Creates a scrolling list of settings items.
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize()
     ) {
+        // --- ACCOUNT SECTION ---
         item { SettingsSection("ACCOUNT") }
         item {
+            // Displays the user's profile card.
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -85,6 +92,7 @@ fun SettingsScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // Profile picture placeholder (Initials "AA").
                     Box(
                         Modifier
                             .size(40.dp)
@@ -95,6 +103,7 @@ fun SettingsScreen(
                         Text("AA", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.width(16.dp))
+                    // User name and role.
                     Column(Modifier.weight(1f)) {
                         Text("Admin AI NOC", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Text("Administrator", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
@@ -104,18 +113,22 @@ fun SettingsScreen(
             }
         }
 
+        // --- PREFERENCES SECTION ---
         item { SettingsSection("PREFERENCES") }
         item { SettingsRow("Theme", Icons.Default.DarkMode, value = null) { contentNavController.navigate(Screen.ThemeSettings.route) } }
         item { SettingsRow("Notifications", Icons.Default.Notifications) { contentNavController.navigate(Screen.NotificationSettings.route) } }
 
+        // --- ADMINISTRATION SECTION ---
         item { SettingsSection("ADMINISTRATION") }
         item { SettingsRow("AI Management", Icons.Default.AutoAwesome) { contentNavController.navigate(Screen.AiManagement.route) } }
         item { SettingsRow("Asset Management", Icons.Default.Dns) { contentNavController.navigate(Screen.Explorer.route) } }
         item { SettingsRow("Maintenance Windows", Icons.Default.CalendarMonth) { contentNavController.navigate(Screen.MaintenanceWindows.route) } }
 
+        // --- APPLICATION SECTION ---
         item { SettingsSection("APPLICATION") }
         item { SettingsRow("About", Icons.Default.Info, value = "v1.0.0") { contentNavController.navigate(Screen.About.route) } }
 
+        // Logout Button at the bottom.
         item {
             Box(Modifier.fillMaxWidth().padding(top = 16.dp), contentAlignment = Alignment.Center) {
                 TextButton(
@@ -129,6 +142,7 @@ fun SettingsScreen(
     }
 }
 
+// Helper to draw a section header title (e.g., "PREFERENCES").
 @Composable
 private fun SettingsSection(title: String) {
     Text(
@@ -139,6 +153,7 @@ private fun SettingsSection(title: String) {
     )
 }
 
+// Helper to draw a single clickable row in the settings list (Icon + Text + Arrow).
 @Composable
 private fun SettingsRow(title: String, icon: ImageVector, value: String? = null, onClick: () -> Unit) {
     Card(
@@ -166,6 +181,7 @@ private fun SettingsRow(title: String, icon: ImageVector, value: String? = null,
 
 /* ---------------- SUB-SCREENS ---------------- */
 
+// Screen showing user details and security options.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileAndSecurityScreen(navController: NavController) {
@@ -211,6 +227,7 @@ fun ProfileAndSecurityScreen(navController: NavController) {
     }
 }
 
+// Screen to select the app theme (Light, Dark, or System Default).
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSettingsScreen(navController: NavController, viewModel: SettingsViewModel = hiltViewModel()) {
@@ -251,6 +268,7 @@ fun ThemeSettingsScreen(navController: NavController, viewModel: SettingsViewMod
     }
 }
 
+// Screen to toggle various notification types.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationSettingsScreen(navController: NavController, viewModel: SettingsViewModel = hiltViewModel()) {
@@ -296,6 +314,7 @@ fun NotificationSettingsScreen(navController: NavController, viewModel: Settings
     }
 }
 
+// Draws a row with a label and a toggle switch.
 @Composable
 private fun NotificationToggleRow(title: String, isChecked: Boolean, enabled: Boolean = true, onToggle: (Boolean) -> Unit) {
     Row(
@@ -322,6 +341,7 @@ private fun NotificationToggleRow(title: String, isChecked: Boolean, enabled: Bo
     }
 }
 
+// Screen to control AI settings like recalibration.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiManagementScreen(navController: NavController, viewModel: SettingsViewModel = hiltViewModel()) {
@@ -381,6 +401,7 @@ fun AiManagementScreen(navController: NavController, viewModel: SettingsViewMode
     }
 }
 
+// Screen to manage maintenance schedules (placeholder).
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MaintenanceWindowsScreen(navController: NavController) {
@@ -409,6 +430,7 @@ fun MaintenanceWindowsScreen(navController: NavController) {
     }
 }
 
+// Screen showing app version and info.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(navController: NavController) {
@@ -440,6 +462,7 @@ fun AboutScreen(navController: NavController) {
     }
 }
 
+// Helper button to go back to the previous screen.
 @Composable
 private fun BackButton(navController: NavController) {
     IconButton(
@@ -450,6 +473,7 @@ private fun BackButton(navController: NavController) {
     }
 }
 
+// Helper to display a label-value pair (e.g., Username: Admin).
 @Composable
 private fun DetailRow(label: String, value: String) {
     Row(Modifier.padding(vertical = 8.dp)) {

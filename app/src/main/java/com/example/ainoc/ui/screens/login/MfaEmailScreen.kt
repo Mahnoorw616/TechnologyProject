@@ -19,16 +19,19 @@ import com.example.ainoc.ui.theme.*
 import com.example.ainoc.util.Resource
 import com.example.ainoc.viewmodel.LoginViewModel
 
+// This screen is where the user enters their email address.
+// It's the first step of the "Two-Factor Authentication" process after logging in.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MfaEmailScreen(
     navController: NavController,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
+    // Watches the live data from the app's brain (ViewModel), like what email is typed.
     val uiState by viewModel.uiState.collectAsState()
     val mfaEmailResource = uiState.mfaEmailResource
 
-    // Dynamic Gradient
+    // Decides which background colors to use based on if the phone is in Dark or Light mode.
     val isDark = MaterialTheme.colorScheme.isDark
     val gradientColors = if (isDark) {
         listOf(SplashStartDark, SplashEndDark)
@@ -36,6 +39,7 @@ fun MfaEmailScreen(
         listOf(SplashStartLight, SplashEndLight)
     }
 
+    // Automatically moves to the "Enter Code" screen once the email is successfully sent.
     LaunchedEffect(mfaEmailResource) {
         if (mfaEmailResource is Resource.Success) {
             navController.navigate(Screen.MfaCode.route)
@@ -45,6 +49,7 @@ fun MfaEmailScreen(
 
     Scaffold(
         topBar = {
+            // Standard top bar with a title and a back button.
             TopAppBar(
                 title = { Text("Two-Factor Authentication", color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = {
@@ -59,12 +64,13 @@ fun MfaEmailScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(colors = gradientColors))
+                .background(Brush.verticalGradient(colors = gradientColors)) // Applies the colorful background.
                 .padding(paddingValues)
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Main instructions for the user.
             Text(
                 "Verify Your Identity",
                 style = MaterialTheme.typography.headlineSmall,
@@ -79,12 +85,14 @@ fun MfaEmailScreen(
             )
             Spacer(Modifier.height(32.dp))
 
+            // The text box where the user types their email.
             OutlinedTextField(
                 value = uiState.mfaEmail,
                 onValueChange = viewModel::onMfaEmailChange,
                 label = { Text("Email Address") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                // Turns the box red if the email format is wrong.
                 isError = uiState.mfaEmail.isNotEmpty() && !uiState.isMfaEmailValid,
                 enabled = mfaEmailResource !is Resource.Loading,
                 colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -97,6 +105,7 @@ fun MfaEmailScreen(
                     unfocusedLabelColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
             )
+            // Shows a helper message below the box if the email is invalid.
             if (uiState.mfaEmail.isNotEmpty() && !uiState.isMfaEmailValid) {
                 Text(
                     "Please enter a valid email address",
@@ -107,6 +116,7 @@ fun MfaEmailScreen(
             }
             Spacer(Modifier.height(24.dp))
 
+            // Shows a loading circle while sending, or the "Send" button if ready.
             if (mfaEmailResource is Resource.Loading) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             } else {

@@ -43,16 +43,21 @@ import com.example.ainoc.ui.theme.*
 import com.example.ainoc.util.NoRippleInteractionSource
 import kotlinx.coroutines.launch
 
+// This is the "Shell" of the app once the user logs in.
+// It contains the Top Bar, the Side Drawer, the Bottom Navigation Bar, and the main content area.
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MainScreen(mainNavController: NavController) {
+    // This controller manages navigation inside the main tabs (Dashboard, Alerts, etc.).
     val contentNavController = rememberNavController()
+    // This controls opening and closing the side menu.
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    // Used to show/hide the "Are you sure you want to logout?" popup.
     var showLogoutDialog by remember { mutableStateOf(false) }
 
-    // DYNAMIC GRADIENT
+    // DYNAMIC GRADIENT: Chooses the background color based on the current theme setting.
     val isDark = MaterialTheme.colorScheme.isDark
     val gradientColors = if (isDark) {
         listOf(SplashStartDark, SplashEndDark)
@@ -60,6 +65,7 @@ fun MainScreen(mainNavController: NavController) {
         listOf(SplashStartLight, SplashEndLight)
     }
 
+    // The Logout Confirmation Dialog.
     if (showLogoutDialog) {
         AlertDialog(
             containerColor = MaterialTheme.colorScheme.surface,
@@ -67,7 +73,14 @@ fun MainScreen(mainNavController: NavController) {
             title = { Text("Log Out?", color = MaterialTheme.colorScheme.onSurface) },
             text = { Text("Are you sure you want to log out?", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)) },
             confirmButton = {
-                TextButton(onClick = { showLogoutDialog = false; mainNavController.navigate(Screen.Login.route) { popUpTo(mainNavController.graph.id) { inclusive = true } } }, interactionSource = remember { NoRippleInteractionSource() }) { Text("Log Out", color = CriticalRed) }
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false;
+                        // Go back to the Login screen and clear the back history.
+                        mainNavController.navigate(Screen.Login.route) { popUpTo(mainNavController.graph.id) { inclusive = true } }
+                    },
+                    interactionSource = remember { NoRippleInteractionSource() }
+                ) { Text("Log Out", color = CriticalRed) }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }, interactionSource = remember { NoRippleInteractionSource() }) { Text("Cancel", color = MaterialTheme.colorScheme.onSurface) }
@@ -75,37 +88,46 @@ fun MainScreen(mainNavController: NavController) {
         )
     }
 
+    // This wrapper enables the Side Drawer menu.
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            DrawerContent(contentNavController, { scope.launch { drawerState.close() } }, { scope.launch { drawerState.close() }; showLogoutDialog = true })
+            DrawerContent(
+                contentNavController,
+                { scope.launch { drawerState.close() } }, // Closes drawer when an item is clicked.
+                { scope.launch { drawerState.close() }; showLogoutDialog = true } // Closes drawer and opens logout dialog.
+            )
         }
     ) {
+        // Scaffold provides the standard layout structure (TopBar, BottomBar, Content).
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text("AI NOC", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold) },
                     navigationIcon = {
+                        // Button to open the side drawer.
                         IconButton(onClick = { scope.launch { drawerState.open() } }, interactionSource = remember { NoRippleInteractionSource() }) {
                             Icon(Icons.Default.Menu, "Menu", tint = MaterialTheme.colorScheme.onBackground)
                         }
                     },
                     actions = {
+                        // Profile icon button.
                         IconButton(onClick = { contentNavController.navigate(Screen.ProfileAndSecurity.route) }, interactionSource = remember { NoRippleInteractionSource() }) {
                             Icon(Icons.Default.AccountCircle, "Account", tint = MaterialTheme.colorScheme.onBackground)
                         }
                     },
-                    // Use a slightly transparent background to let the gradient bleed through in the status bar area
+                    // Makes the top bar slightly see-through.
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.7f))
                 )
             },
             bottomBar = { BottomNavigationBar(contentNavController) }
         ) { padding ->
+            // The main content area where different screens (Dashboard, Alerts) appear.
             Box(
                 modifier = Modifier
                     .padding(padding)
                     .fillMaxSize()
-                    .background(Brush.verticalGradient(gradientColors))
+                    .background(Brush.verticalGradient(gradientColors)) // Applies the colorful background.
             ) {
                 MainContentNavHost(contentNavController, mainNavController)
             }
@@ -113,6 +135,7 @@ fun MainScreen(mainNavController: NavController) {
     }
 }
 
+// This draws the navigation bar at the bottom of the screen.
 @Composable
 private fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
@@ -128,8 +151,16 @@ private fun BottomNavigationBar(navController: NavController) {
             val selected = currentRoute == item.route
             NavigationBarItem(
                 selected = selected,
-                onClick = { if (!selected) navController.navigate(item.route) { popUpTo(navController.graph.startDestinationId) { saveState = true }; launchSingleTop = true; restoreState = true } },
-                icon = { BadgedBox(badge = { item.badgeCount?.let { Badge { Text("$it") } } }) { Icon(if (selected) item.selectedIcon else item.unselectedIcon, item.title) } },
+                onClick = {
+                    if (!selected) navController.navigate(item.route) {
+                        popUpTo(navController.graph.startDestinationId) { saveState = true }; launchSingleTop = true; restoreState = true
+                    }
+                },
+                icon = {
+                    BadgedBox(badge = { item.badgeCount?.let { Badge { Text("$it") } } }) {
+                        Icon(if (selected) item.selectedIcon else item.unselectedIcon, item.title)
+                    }
+                },
                 alwaysShowLabel = false,
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.primary,
@@ -142,9 +173,11 @@ private fun BottomNavigationBar(navController: NavController) {
     }
 }
 
+// This draws the content inside the slide-out Side Menu.
 @Composable
 private fun DrawerContent(contentNavController: NavController, onCloseDrawer: () -> Unit, onLogoutClick: () -> Unit) {
     ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.background) {
+        // Drawer Header with Logo and User Email.
         Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Image(painterResource(R.drawable.ai_noc_logo), "Logo", Modifier.size(80.dp))
             Spacer(Modifier.height(8.dp))
@@ -153,6 +186,7 @@ private fun DrawerContent(contentNavController: NavController, onCloseDrawer: ()
         }
         HorizontalDivider(Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
+        // List of menu items.
         val drawerItems = listOf("Asset Management" to Screen.Explorer.route, "Maintenance Windows" to Screen.MaintenanceWindows.route, "Reports" to Screen.Alerts.route, "AI Management" to Screen.AiManagement.route, "Settings" to Screen.Settings.route)
         val icons = listOf(Icons.Outlined.Dns, Icons.Outlined.CalendarMonth, Icons.Outlined.BarChart, Icons.Outlined.AutoAwesome, Icons.Outlined.Settings)
 
@@ -172,13 +206,28 @@ private fun DrawerContent(contentNavController: NavController, onCloseDrawer: ()
             }
         }
         HorizontalDivider(Modifier.padding(12.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-        NavigationDrawerItem(label = { Text("Logout") }, selected = false, onClick = onLogoutClick, icon = { Icon(Icons.Outlined.Logout, "Logout", tint = MaterialTheme.colorScheme.primary) }, colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onBackground), interactionSource = remember { NoRippleInteractionSource() })
+
+        // Logout Button at the bottom of the drawer.
+        NavigationDrawerItem(
+            label = { Text("Logout") },
+            selected = false,
+            onClick = onLogoutClick,
+            icon = { Icon(Icons.Outlined.Logout, "Logout", tint = MaterialTheme.colorScheme.primary) },
+            colors = NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onBackground),
+            interactionSource = remember { NoRippleInteractionSource() }
+        )
     }
 }
 
+// This manages the navigation logic for the content area (switching between Dashboard, Alerts, Settings, etc.).
 @Composable
 private fun MainContentNavHost(contentNavController: NavHostController, mainNavController: NavController) {
-    NavHost(navController = contentNavController, startDestination = Screen.Dashboard.route, enterTransition = { fadeIn(tween(300)) }, exitTransition = { fadeOut(tween(300)) }) {
+    NavHost(
+        navController = contentNavController,
+        startDestination = Screen.Dashboard.route,
+        enterTransition = { fadeIn(tween(300)) },
+        exitTransition = { fadeOut(tween(300)) }
+    ) {
         composable(Screen.Dashboard.route) { DashboardScreen() }
         composable(Screen.Alerts.route) { AlertsListScreen(contentNavController) }
         composable(Screen.Explorer.route) { ExplorerScreen(contentNavController) }
@@ -189,6 +238,7 @@ private fun MainContentNavHost(contentNavController: NavHostController, mainNavC
         composable(Screen.AiManagement.route) { AiManagementScreen(contentNavController) }
         composable(Screen.MaintenanceWindows.route) { MaintenanceWindowsScreen(contentNavController) }
         composable(Screen.About.route) { AboutScreen(contentNavController) }
+        // Special logic for screens that need arguments (like an ID).
         composable(Screen.AlertDetails.route, enterTransition = { slideInHorizontally(tween(350)) { it } }, exitTransition = { slideOutHorizontally(tween(350)) { -it } }) { AlertDetailsScreen(it.arguments?.getString("alertId") ?: "", contentNavController) }
         composable("device_details/{deviceId}", enterTransition = { slideInHorizontally(tween(350)) { it } }, exitTransition = { slideOutHorizontally(tween(350)) { -it } }) { DeviceDetailsScreen(it.arguments?.getString("deviceId") ?: "", contentNavController) }
     }

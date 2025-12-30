@@ -8,31 +8,28 @@ import okhttp3.Response
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * An OkHttp Interceptor that adds an Authorization header with a JWT Bearer token.
- * The token is retrieved synchronously from the SessionManager.
- *
- * @param sessionManager The manager responsible for providing the auth token.
- */
+// This acts like a security guard for every internet request the app makes.
+// It automatically stamps our "VIP Pass" (Auth Token) onto every message sent to the server so the server knows who we are.
 @Singleton
 class AuthInterceptor @Inject constructor(
     private val sessionManager: SessionManager
 ) : Interceptor {
 
+    // This function intercepts the outgoing message, adds the token stamp, and then lets it proceed.
     override fun intercept(chain: Interceptor.Chain): Response {
         val requestBuilder = chain.request().newBuilder()
 
-        // NOTE: runBlocking is generally discouraged, but it is an accepted and common
-        // practice within the synchronous execution model of OkHttp Interceptors.
+        // We pause briefly to grab the saved token from our secure storage.
         val token = runBlocking {
             sessionManager.authToken.first()
         }
 
-        // If a token exists, add it to the request header.
+        // If we found a token, we attach it to the header of the request.
         token?.let {
             requestBuilder.addHeader("Authorization", "Bearer $it")
         }
 
+        // Send the modified request on its way.
         return chain.proceed(requestBuilder.build())
     }
 }

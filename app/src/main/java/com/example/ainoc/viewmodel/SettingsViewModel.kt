@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.ainoc.data.local.SessionManager
 import com.example.ainoc.ui.theme.ThemeSetting
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// Holds the current state of all settings switches and options.
 data class SettingsUiState(
     val selectedTheme: ThemeSetting = ThemeSetting.DARK,
     val notificationsEnabled: Boolean = true,
@@ -25,6 +27,8 @@ data class SettingsUiState(
     val isRecalibrating: Boolean = false
 )
 
+// This ViewModel manages the Settings screen.
+// It saves changes (like theme selection) to persistent storage.
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val sessionManager: SessionManager
@@ -33,6 +37,8 @@ class SettingsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState = _uiState.asStateFlow()
 
+    // When the app starts, this watches the saved theme setting.
+    // If the theme changes, it updates the UI state immediately.
     init {
         viewModelScope.launch {
             sessionManager.appTheme.collectLatest { themeString ->
@@ -46,13 +52,15 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // Saves the new theme choice to storage.
     fun onThemeSelected(theme: ThemeSetting) {
         viewModelScope.launch {
             sessionManager.saveTheme(theme.name)
         }
-        // State will update via the collector in init block
+        // The state updates automatically via the watcher in 'init'.
     }
 
+    // Toggles various notification settings on or off.
     fun onNotificationToggle(type: String, isEnabled: Boolean) {
         _uiState.update {
             when (type) {
@@ -70,11 +78,11 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(quietHoursEnabled = isEnabled) }
     }
 
+    // Simulates a long-running AI calibration task.
     fun recalibrateAi() {
         _uiState.update { it.copy(isRecalibrating = true) }
-        // Simulate operation
         viewModelScope.launch {
-            kotlinx.coroutines.delay(2000)
+            delay(2000)
             _uiState.update { it.copy(isRecalibrating = false) }
         }
     }

@@ -23,17 +23,24 @@ import androidx.compose.ui.unit.sp
 import com.example.ainoc.data.model.NetworkStatus
 import com.example.ainoc.util.NoRippleInteractionSource
 
+// This is the big animated circle on the main Dashboard.
+// It pulses like a heartbeat and rotates to show that the system is alive and monitoring.
+// It changes color (Green/Yellow/Red) based on network health.
 @Composable
 fun HealthOrb(status: NetworkStatus, modifier: Modifier = Modifier) {
     var isTapped by remember { mutableStateOf(false) }
+
+    // Sets up a continuous animation loop.
     val infiniteTransition = rememberInfiniteTransition(label = "orb_animations")
 
+    // Animates the outer ring spinning around.
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f, targetValue = 360f,
         animationSpec = infiniteRepeatable(animation = tween(8000, easing = LinearEasing), repeatMode = RepeatMode.Restart),
         label = "rotation"
     )
 
+    // Animates the center circle pulsing in and out.
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 0.92f, targetValue = 1.0f,
         animationSpec = infiniteRepeatable(
@@ -43,6 +50,7 @@ fun HealthOrb(status: NetworkStatus, modifier: Modifier = Modifier) {
         label = "core_pulse"
     )
 
+    // Animates a ripple effect expanding outward.
     val rippleAlpha by infiniteTransition.animateFloat(
         initialValue = 0.6f, targetValue = 0f,
         animationSpec = infiniteRepeatable(animation = tween(2500, easing = LinearEasing), repeatMode = RepeatMode.Restart),
@@ -55,7 +63,7 @@ fun HealthOrb(status: NetworkStatus, modifier: Modifier = Modifier) {
         label = "ripple_scale"
     )
 
-    // VISIBILITY FIX: Use OnBackground color (Grey in Light, Beige in Dark)
+    // Automatically picks a readable text color based on the current Theme.
     val textColor = MaterialTheme.colorScheme.onBackground
 
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -65,14 +73,15 @@ fun HealthOrb(status: NetworkStatus, modifier: Modifier = Modifier) {
                 .clickable(interactionSource = remember { NoRippleInteractionSource() }, indication = null) { isTapped = !isTapped },
             contentAlignment = Alignment.Center
         ) {
+            // This Canvas does all the complex drawing of rings and gradients.
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val center = Offset(size.width / 2, size.height / 2)
                 val mainRadius = (size.width / 2) * 0.65f
 
-                // Ripple
+                // Draw the expanding ripple effect.
                 drawCircle(color = status.color.copy(alpha = rippleAlpha * 0.3f), radius = mainRadius * rippleScale, center = center)
 
-                // Rotating Ring
+                // Draw the rotating outer ring with a tail effect.
                 rotate(degrees = rotation, pivot = center) {
                     drawCircle(
                         brush = Brush.sweepGradient(colors = listOf(Color.Transparent, status.color.copy(alpha = 0.1f), status.color.copy(alpha = 0.8f), Color.Transparent)),
@@ -80,7 +89,7 @@ fun HealthOrb(status: NetworkStatus, modifier: Modifier = Modifier) {
                     )
                 }
 
-                // Inner Dashed Ring
+                // Draw the inner dashed ring rotating the opposite way.
                 rotate(degrees = -rotation * 1.5f, pivot = center) {
                     drawCircle(
                         brush = Brush.sweepGradient(colors = listOf(status.color.copy(alpha = 0.5f), Color.Transparent)),
@@ -88,7 +97,7 @@ fun HealthOrb(status: NetworkStatus, modifier: Modifier = Modifier) {
                     )
                 }
 
-                // Core Orb
+                // Draw the main solid colored orb in the middle.
                 drawCircle(
                     brush = Brush.radialGradient(colors = listOf(status.color.copy(alpha = 0.8f), status.color.copy(alpha = 0.3f), Color.Transparent), center = center, radius = mainRadius * pulseScale),
                     radius = mainRadius * pulseScale, center = center
@@ -97,14 +106,14 @@ fun HealthOrb(status: NetworkStatus, modifier: Modifier = Modifier) {
                 drawCircle(color = status.color, radius = mainRadius * pulseScale, center = center, style = Stroke(width = 3.dp.toPx()))
             }
 
-            // Center Text
+            // Draw the status text (e.g., "HEALTHY") in the center of the orb.
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = status.internalText,
-                    color = textColor, // Dynamic Color
+                    color = textColor,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
-                    // Shadow ensures visibility even if the orb color is bright in light mode
+                    // Adds a shadow to make text pop against the colored background.
                     style = androidx.compose.ui.text.TextStyle(
                         shadow = androidx.compose.ui.graphics.Shadow(color = Color.Black.copy(alpha = 0.3f), blurRadius = 8f)
                     )
@@ -115,6 +124,7 @@ fun HealthOrb(status: NetworkStatus, modifier: Modifier = Modifier) {
             }
         }
 
+        // If user taps the orb, show a detailed status message below it.
         AnimatedVisibility(visible = isTapped) {
             Text(
                 text = status.summaryText,

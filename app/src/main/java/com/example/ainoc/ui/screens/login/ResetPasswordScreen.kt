@@ -18,17 +18,19 @@ import com.example.ainoc.ui.theme.*
 import com.example.ainoc.util.Resource
 import com.example.ainoc.viewmodel.LoginViewModel
 
+// This screen lets users request a password reset link if they forgot their credentials.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResetPasswordScreen(
     navController: NavController,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
+    // Watches the email input and the status of the reset request (loading/success).
     val uiState by viewModel.uiState.collectAsState()
     val resetEmail = uiState.resetEmail
     val resetState = uiState.resetPasswordResource
 
-    // Dynamic Gradient
+    // Selects the appropriate background gradient for Light or Dark mode.
     val isDark = MaterialTheme.colorScheme.isDark
     val gradientColors = if (isDark) {
         listOf(SplashStartDark, SplashEndDark)
@@ -38,6 +40,7 @@ fun ResetPasswordScreen(
 
     Scaffold(
         topBar = {
+            // Standard top bar with a Back button to return to Login.
             TopAppBar(
                 title = { Text("Reset Password", color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = {
@@ -52,13 +55,15 @@ fun ResetPasswordScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(colors = gradientColors))
+                .background(Brush.verticalGradient(colors = gradientColors)) // Applies the gradient.
                 .padding(paddingValues)
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Checks if the reset email was sent successfully.
             if (resetState is Resource.Success) {
+                // If yes, show a success message.
                 Text(
                     "Success!",
                     style = MaterialTheme.typography.headlineSmall,
@@ -71,6 +76,7 @@ fun ResetPasswordScreen(
                     color = MaterialTheme.colorScheme.onBackground
                 )
             } else {
+                // If not yet sent, show the form to enter the email.
                 Text(
                     "Enter your account email to receive a password reset link.",
                     style = MaterialTheme.typography.bodyLarge,
@@ -79,6 +85,7 @@ fun ResetPasswordScreen(
                 )
                 Spacer(Modifier.height(32.dp))
 
+                // The input box for the email.
                 OutlinedTextField(
                     value = resetEmail,
                     onValueChange = viewModel::onResetEmailChange,
@@ -98,6 +105,7 @@ fun ResetPasswordScreen(
                 )
                 Spacer(Modifier.height(24.dp))
 
+                // Shows a loading circle or the "Send" button.
                 if (resetState is Resource.Loading) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 } else {

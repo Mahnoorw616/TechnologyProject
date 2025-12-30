@@ -15,17 +15,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ainoc.ui.theme.*
 
-/**
- * A widget to display Key Performance Indicators (e.g., Uptime, Latency).
- * Adapts to Light and Dark themes.
- */
+// This widget displays a single Key Performance Indicator (KPI), like "Uptime" or "Latency".
+// It shows a title, a big value, and a small trend arrow to indicate if things are getting better or worse.
 @Composable
 fun KpiWidget(
     title: String,
     value: String,
     icon: ImageVector,
     trend: String? = null,
-    isTrendPositive: Boolean = true, // If true, trend is green/good. If false, red/bad.
+    isTrendPositive: Boolean = true, // Tells us if the trend is good (Green) or bad (Red).
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -39,6 +37,7 @@ fun KpiWidget(
                 .padding(12.dp)
                 .fillMaxWidth()
         ) {
+            // Top row with Icon and Title
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -59,6 +58,7 @@ fun KpiWidget(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // The main value (e.g., "99.9%")
             Text(
                 text = value,
                 style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
@@ -66,6 +66,7 @@ fun KpiWidget(
                 fontWeight = FontWeight.Bold
             )
 
+            // Optional trend indicator at the bottom (e.g., "+5%").
             if (trend != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
